@@ -1,0 +1,24 @@
+// links.js
+export const LINKS = {
+  "Basic Fire prevention & Fire Watch Quiz": "https://www.surveymonkey.com/r/LWABasicFirePreventionQuiz",
+  "COVID-19 Awareness Training": "https://www.surveymonkey.com/r/LWACovid-19TrainingGuidelines",
+  "Electrical Hazard Awareness": "https://www.surveymonkey.com/r/LWAElectricalQuiz",
+  "Fall Protection Awareness Training": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
+  "Hot Work Safety Awareness Link": "https://www.surveymonkey.com/r/LWAHotWork",
+  "Indoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAIndoorHeatIllness",
+  "Ladder Safety Awareness": "https://www.surveymonkey.com/r/LWALadderSafety",
+  "Lead Awareness Training": "https://www.surveymonkey.com/r/LWAleadAwarenessTraining",
+  "Lockout/Tagout Awareness Link": "https://www.surveymonkey.com/r/LWALOTOQUIZ",
+  "Machine Safeguarding Awareness": "https://www.surveymonkey.com/r/LWAMachineGuardQuiz",
+  "Orientation Awareness Training": "https://www.surveymonkey.com/r/LWAOrientationAwareness",
+  "Outdoor Heat Illness Awareness": "https://www.surveymonkey.com/r/LWAHeatIllnessQuiz",
+  "Overhead Crane Operation Awareness Training": "https://www.surveymonkey.com/r/LWACraneOperationQuiz",
+  "Personal Protective Equipment Awareness": "https://www.surveymonkey.com/r/LWAPPEQuiz",
+  "Prop 65 Awareness Training": "https://www.surveymonkey.com/r/LWAProp65Quiz",
+  "Respiratory Protection Awareness": "https://www.surveymonkey.com/r/LWARespiratoryProtectionQuiz",
+  "Silica Dust Exposure Awareness": "https://www.surveymonkey.com/r/LWASilicaDustExposure",
+  "Valley Fever Awareness": "https://www.surveymonkey.com/r/LWABValleyFeverAwarenessTraining",
+  "Wildfire Smoke Training": "https://www.surveymonkey.com/r/LWAWildFireTraining",
+  "Workplace Violence Prevention Training": "https://www.surveymonkey.com/r/LWAWVPP",
+  "Workplace Violence Prevention": "https://www.surveymonkey.com/r/LWAWVPP"
+};
