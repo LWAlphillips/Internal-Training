@@ -170,16 +170,30 @@ async function exportPDF() {
 function openOutlookEmail(normName) {
   const emp = employeeMap[normName];
   if (!emp) return;
-  const name = emp.original;
+  const fullName = emp.original;
+  const firstName = fullName.split(' ')[0];
   const over = Object.entries(emp.records)
     .filter(([, r]) => r['Status'] === 'Overdue')
     .map(([topic, r]) => {
       const link = LINKS[topic] || 'Schedule Training';
+      const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
       const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
-      return `• ${topic} (Expires: ${exp})\n  ${link}`;
+      return `• ${topic}\n  (Training: ${trainDate} | Expires: ${exp})\n  ${link}`;
     }).join('\n\n');
-  const body = `Hi Team,\n\n${name} has ${over.split('\n').filter(l=>l.startsWith('•')).length} overdue training(s):\n\n${over || '• None'}\n\nPlease have ${name} complete the training ASAP.\n\nGenerated: ${new Date().toLocaleString()}\nLWA Training Tracker`;
-  location.href = `mailto:${RECIPIENT_EMAIL}?subject=Overdue Training: ${encodeURIComponent(name)}&body=${encodeURIComponent(body)}`;
+
+  const count = over.split('\n').filter(l => l.startsWith('•')).length;
+  const body = `Hi ${firstName},
+
+You have ${count} overdue training${count !== 1 ? 's' : ''}:
+
+${over || '• None'}
+
+Please complete ASAP.
+
+Generated: ${new Date().toLocaleString()}
+LWA Training Tracker`;
+
+  location.href = `mailto:${RECIPIENT_EMAIL}?subject=Overdue Training: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
 }
 
 async function buildData() {
@@ -297,3 +311,4 @@ setInterval(buildData, 600000);
 </script>
 </body>
 </html>
+
