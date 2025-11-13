@@ -215,15 +215,21 @@ function renderTopics(filter = '') {
   Object.keys(topicMap).sort((a,b) => a.localeCompare(b)).forEach(t => {
     if (filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
     const count = topicMap[t].length;
+
+    // Check if ANY employee has this topic completed
+    const hasCompletion = topicMap[t].some(r => r['Status'] === 'Completed');
+    const completionBadge = hasCompletion ? ' <span class="text-success ms-1">✓</span>' : '';
+
     let link = LINKS[t];
     if (!link) link = Object.keys(LINKS).find(key => t.includes(key) || key.includes(t));
     if (link) link = LINKS[link];
+
     const item = document.createElement('a');
     item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
     if (link) {
-      item.innerHTML = `<a href="${link}" target="_blank" class="training-link me-2">${t}</a> <span class="badge bg-primary rounded-pill">${count}</span>`;
+      item.innerHTML = `<a href="${link}" target="_blank" class="training-link me-2">${t}${completionBadge}</a> <span class="badge bg-primary rounded-pill">${count}</span>`;
     } else {
-      item.innerHTML = `<span class="schedule-training">${t}</span> <span class="badge bg-primary rounded-pill">${count}</span>`;
+      item.innerHTML = `<span class="schedule-training">${t}${completionBadge}</span> <span class="badge bg-primary rounded-pill">${count}</span>`;
     }
     item.onclick = e => { if (e.target.tagName === 'A') return; showTopicDetail(t); };
     el.appendChild(item);
@@ -295,4 +301,5 @@ setInterval(buildData, 600000);
 </script>
 </body>
 </html>
+
 
