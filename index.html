@@ -157,13 +157,13 @@ function notifyBadge(r) {
   return r['Status'] === 'Overdue' && parseInt(r['Days Remaining']) < 0 ? '<span class="badge badge-notify ms-1">Notify</span>' : '';
 }
 
-// PDF — FIXED: Wait for render + direct table
+// PDF — FIXED: 300ms delay + useCORS
 async function exportPDF() {
   setTimeout(async () => {
     try {
       const table = document.getElementById('detailTable');
       if (!table) {
-        alert('Table not ready — click an employee first');
+        alert('No data — click an employee first');
         return;
       }
       const clone = table.cloneNode(true);
@@ -179,7 +179,7 @@ async function exportPDF() {
         span.textContent = el.textContent;
         el.parentNode.replaceChild(span, el);
       });
-      const canvas = await html2canvas(clone, { scale: 2 });
+      const canvas = await html2canvas(clone, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL('image/png');
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -199,12 +199,12 @@ async function exportPDF() {
       pdf.save('training-report.pdf');
     } catch (err) {
       console.error('PDF Error:', err);
-      alert('PDF failed — check console.');
+      alert('PDF failed — open browser console (F12)');
     }
-  }, 100);
+  }, 300);
 }
 
-// EMAIL — PLAIN TEXT + URL (Outlook auto-links)
+// EMAIL — URL ON OWN LINE
 function openOutlookEmail(normName) {
   const empData = employeeMap[normName];
   if (!empData) return;
@@ -214,7 +214,7 @@ function openOutlookEmail(normName) {
     .map(([topic, r]) => {
       const link = LINKS[topic] || null;
       const expires = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
-      const action = link ? link : 'Schedule Training';
+      const action = link ? `\n${link}` : 'Schedule Training';
       return `• ${topic} (Expires: ${expires}) — ${action}`;
     });
 
@@ -223,7 +223,7 @@ function openOutlookEmail(normName) {
 
 ${originalName} has ${overdues.length} overdue training${overdues.length !== 1 ? 's' : ''}:
 
-${overdues.length ? overdues.join('\n') : '• None'}
+${overdues.length ? overdues.join('\n\n') : '• None'}
 
 Please have ${originalName} complete the training ASAP.
 
@@ -233,6 +233,10 @@ LWA Training Tracker`.trim();
   const mailtoLink = `mailto:${RECIPIENT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.location.href = mailtoLink;
 }
+
+// ... [rest of code unchanged] ...
+
+// [Include all other functions: buildData, renderTopics, showEmployeeDetail, etc. from previous version]
 
 async function buildData() {
   records = await loadData();
