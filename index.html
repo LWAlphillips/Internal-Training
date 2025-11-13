@@ -98,41 +98,61 @@ async function loadPDFLibs() {
   }
 }
 
-// PDF — WORKS EVERY TIME
+// PDF — INCLUDES EMPLOYEE NAME
 async function exportPDF() {
   await loadPDFLibs();
   setTimeout(async () => {
     try {
-      const table = document.getElementById('detailTable');
-      if (!table) {
-        alert('Click an employee first');
+      const detailPane = document.querySelector('#detailPane .card-body');
+      if (!detailPane) {
+        alert('No data — click an employee first');
         return;
       }
 
-      const clone = table.cloneNode(true);
-      clone.querySelectorAll('a').forEach(a => {
-        const span = document.createElement('span');
-        span.textContent = a.textContent + ' (' + a.href + ')';
-        a.parentNode.replaceChild(span, a);
-      });
+      // Clone entire detail pane
+      const clone = detailPane.cloneNode(true);
 
+      // Remove buttons
+      clone.querySelectorAll('button').forEach(btn => btn.remove());
+
+      // Style for PDF
+      clone.style.padding = '20px';
+      clone.style.backgroundColor = '#fff';
+      clone.style.border = '1px solid #ddd';
+      clone.style.borderRadius = '12px';
+
+      // Add to DOM (off-screen)
       document.body.appendChild(clone);
       clone.style.position = 'absolute';
       clone.style.left = '-9999px';
-      clone.style.width = table.offsetWidth + 'px';
+      clone.style.width = '800px';
 
-      const canvas = await html2canvas(clone, { scale: 2 });
+      const canvas = await html2canvas(clone, { scale: 2, useCORS: true });
       document.body.removeChild(clone);
 
       const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const width = pdf.internal.pageSize.getWidth();
-      const height = (canvas.height * width) / canvas.width;
+      const imgWidth = 190;
+      const pageHeight = 277;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, width, height);
-      pdf.save('training-report.pdf');
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const name = detailPane.querySelector('h4')?.textContent || 'Training-Report';
+      pdf.save(`${name.replace(/[^a-z0-9]/gi, '_')}.pdf`);
     } catch (err) {
-      console.error(err);
+      console.error('PDF Error:', err);
       alert('PDF failed — check console');
     }
   }, 500);
@@ -175,3 +195,4 @@ LWA Training Tracker`;
 </body>
 
 </html>
+
