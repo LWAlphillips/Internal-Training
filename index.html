@@ -35,6 +35,8 @@
     body.dark .training-link { color:#4dabf7; }
     .schedule-training { color:inherit; font-weight:500; }
     body.dark .schedule-training { color:#ccc; }
+    .category-header { background:#e9ecef; font-weight:600; padding:8px 16px; font-size:0.9rem; }
+    body.dark .category-header { background:#2c2c2c; color:#ccc; }
   </style>
 </head>
 <body class="p-3">
@@ -75,14 +77,60 @@
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMwtFhCZCDqPeWROrxXY6ytBvitNzyVKfGyNRQ5lfTXChyrqJDwBET4tRF4ocoSsafk0O0fUwoDxj6/pub?gid=1442283748&single=true&output=csv';
 const RECIPIENT_EMAIL = 'your-team@company.com';
 
+// === TRAINING CATEGORIES ===
+const CATEGORIES = {
+  "Required – ALL": [
+    "Indoor Heat Illness Prevention",
+    "Personal Protective Equipment",
+    "Workplace Violence"
+  ],
+  "Required – Field": [
+    "Orientation Awareness",
+    "Fall Protection Awareness",
+    "HazCom",
+    "Outdoor Heat Illness Prevention",
+    "Basic Fire Protection & Fire Watch",
+    "Electrical Hazard",
+    "Ladder Safety",
+    "Hot Work Safety",
+    "Lead Awareness",
+    "Lockout/Tagout",
+    "Machine Safeguarding",
+    "Overhead Crane",
+    "Prop 65",
+    "Respiratory Awareness",
+    "Silica Dust",
+    "Valley Fever",
+    "Wildfire Smoke"
+  ],
+  "If Assigned": [
+    "Certified Rigger and Signaler",
+    "Confined Space",
+    "First Aid/CPR",
+    "Forklift Training",
+    "Intro to First Aid",
+    "Mobile Elevated Work Platform",
+    "NCCO Crane Operations",
+    "OSHA 30",
+    "Part 46 Miner",
+    "Part 46 Refresher",
+    "Respiratory Fit Testing",
+    "Respiratory Medical Questionnaire",
+    "Silica Awareness",
+    "Silica Dust Exposure"
+  ]
+};
+
+// === HYPERLINKS ===
 const LINKS = {
-  "Fall Protection": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
-  "Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAIndoorHeatIllness",
+  "Fall Protection Awareness": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
+  "Indoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAIndoorHeatIllness",
+  "Outdoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAHeatIllnessQuiz",
   "Personal Protective Equipment": "https://www.surveymonkey.com/r/LWAPPEQuiz",
-  "Silica Awareness Training": "https://www.surveymonkey.com/r/LWASilicaDustExposure",
   "Silica Dust Exposure": "https://www.surveymonkey.com/r/LWASilicaDustExposure",
-  "Workplace Violence Prevention": "https://www.surveymonkey.com/r/LWAWVPP",
-  "Fire Prevention and Extinguishers": "https://www.surveymonkey.com/r/LWABasicFirePreventionQuiz"
+  "Workplace Violence": "https://www.surveymonkey.com/r/LWAWVPP",
+  "Fire Prevention and Extinguishers": "https://www.surveymonkey.com/r/LWABasicFirePreventionQuiz",
+  "Basic Fire Protection & Fire Watch": "https://www.surveymonkey.com/r/LWABasicFirePreventionQuiz"
 };
 
 let records = [], topicMap = {}, employeeMap = {}, uniqueEmployees = new Set(), allTopics = new Set();
@@ -166,7 +214,7 @@ async function exportPDF() {
   } catch (e) { console.error(e); alert('PDF failed'); }
 }
 
-// EMAIL — CLICKABLE
+// EMAIL — WITH STATUS
 function openOutlookEmail(normName) {
   const emp = employeeMap[normName];
   if (!emp) return;
@@ -227,23 +275,34 @@ async function buildData() {
 function renderTopics(filter = '') {
   const el = document.getElementById('topicList');
   el.innerHTML = '';
-  Object.keys(topicMap).sort((a,b) => a.localeCompare(b)).forEach(t => {
-    if (filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
-    const count = topicMap[t].length;
-    let link = LINKS[t];
-    if (!link) {
-      link = Object.keys(LINKS).find(key => t.includes(key) || key.includes(t));
+
+  // === Render by Category ===
+  Object.entries(CATEGORIES).forEach(([catName, topics]) => {
+    const filtered = topics.filter(t => !filter || t.toLowerCase().includes(filter.toLowerCase()));
+    if (!filtered.length) return;
+
+    const header = document.createElement('div');
+    header.className = 'category-header';
+    header.textContent = catName;
+    el.appendChild(header);
+
+    filtered.forEach(t => {
+      if (!topicMap[t]) return;
+      const count = topicMap[t].length;
+      let link = LINKS[t];
+      if (!link) link = Object.keys(LINKS).find(key => t.includes(key) || key.includes(t));
       if (link) link = LINKS[link];
-    }
-    const item = document.createElement('a');
-    item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-    if (link) {
-      item.innerHTML = `<a href="${link}" target="_blank" class="training-link me-2">${t}</a> <span class="badge bg-primary rounded-pill">${count}</span>`;
-    } else {
-      item.innerHTML = `<span class="schedule-training">${t}</span> <span class="badge bg-primary rounded-pill">${count}</span>`;
-    }
-    item.onclick = e => { if (e.target.tagName === 'A') return; showTopicDetail(t); };
-    el.appendChild(item);
+
+      const item = document.createElement('a');
+      item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+      if (link) {
+        item.innerHTML = `<a href="${link}" target="_blank" class="training-link me-2">${t}</a> <span class="badge bg-primary rounded-pill">${count}</span>`;
+      } else {
+        item.innerHTML = `<span class="schedule-training">${t}</span> <span class="badge bg-primary rounded-pill">${count}</span>`;
+      }
+      item.onclick = e => { if (e.target.tagName === 'A') return; showTopicDetail(t); };
+      el.appendChild(item);
+    });
   });
 }
 
@@ -312,5 +371,3 @@ setInterval(buildData, 600000);
 </script>
 </body>
 </html>
-
-
