@@ -210,16 +210,16 @@ async function buildData() {
 }
 
 function renderTopics(filter = '') {
-  const el = document.getElement: 'topicList';
+  const el = document.getElementById('topicList');
   el.innerHTML = '';
   Object.keys(topicMap).sort((a,b) => a.localeCompare(b)).forEach(t => {
     if (filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
     const count = topicMap[t].length;
-
     let link = LINKS[t];
-    if (!link) link = Object.keys(LINKS).find(key => t.includes(key) || key.includes(t));
-    if (link) link = LINKS[link];
-
+    if (!link) {
+      link = Object.keys(LINKS).find(key => t.includes(key) || key.includes(t));
+      if (link) link = LINKS[link];
+    }
     const item = document.createElement('a');
     item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
     if (link) {
@@ -297,6 +297,3 @@ setInterval(buildData, 600000);
 </script>
 </body>
 </html>
-
-
-
