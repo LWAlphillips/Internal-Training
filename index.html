@@ -38,7 +38,6 @@
   </style>
 </head>
 <body class="p-3">
-
 <div class="container-fluid">
   <div id="overdueBanner" class="overdue-banner d-none">
     <strong>Overdue Alert:</strong> <span id="overdueCount"></span> trainings overdue for <span id="overdueEmps"></span> employees.
@@ -57,7 +56,6 @@
       </div>
     </div>
   </div></div>
-
   <div class="row">
     <div class="col-lg-4 mb-4"><div class="card h-100">
       <div class="card-header bg-primary text-white"><strong>Training Topics</strong></div>
@@ -70,9 +68,11 @@
     </div></div>
   </div>
 </div>
-
 <script>
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMwtFhCZCDqPeWROrxXY6ytBvitNzyVKfGyNRQ5lfTXChyrqJDwBET4tRF4ocoSsafk0O0fUwoDxj6/pub?gid=1442283748&single=true&output=csv';
+// UPDATE THIS URL AFTER YOU PUBLISH THE SHEET (see instructions below)
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/pub?gid=1442283748&single=true&output=csv';
+
+// Replace with your actual team email
 const RECIPIENT_EMAIL = 'your-team@company.com';
 
 const LINKS = {
@@ -143,7 +143,7 @@ function notifyBadge(r) {
   return r['Status'] === 'Overdue' && parseInt(r['Days Remaining']) < 0 ? '<span class="badge badge-notify ms-1">Notify</span>' : '';
 }
 
-// PDF — BULLETPROOF
+// PDF export
 async function exportPDF() {
   await new Promise(r => setTimeout(r, 1000));
   try {
@@ -166,7 +166,7 @@ async function exportPDF() {
   } catch (e) { console.error(e); alert('PDF failed'); }
 }
 
-// EMAIL — CLICKABLE
+// Email reminder
 function openOutlookEmail(normName) {
   const emp = employeeMap[normName];
   if (!emp) return;
@@ -179,21 +179,18 @@ function openOutlookEmail(normName) {
       const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
       const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
       const status = r['Status'] || 'Unknown';
-      return `• ${topic}\n  (Training: ${trainDate} | Expires: ${exp})\n  Status: ${status}\n  ${link}`;
+      return `• ${topic}\n (Training: ${trainDate} | Expires: ${exp})\n Status: ${status}\n ${link}`;
     }).join('\n\n');
-
   const count = over.split('\n').filter(l => l.startsWith('•')).length;
   const body = `Hi ${firstName},
 
 You have ${count} overdue training${count !== 1 ? 's' : ''}:
-
 ${over || '• None'}
 
 Please complete ASAP.
 
 Generated: ${new Date().toLocaleString()}
 LWA Training Tracker`;
-
   location.href = `mailto:${RECIPIENT_EMAIL}?subject=Overdue Training: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
 }
 
@@ -302,14 +299,14 @@ document.getElementById('darkModeToggle').addEventListener('change', e => {
   document.body.classList.toggle('dark', e.target.checked);
   localStorage.setItem('darkMode', e.target.checked);
 });
+
 if (localStorage.getItem('darkMode') === 'true') {
   document.getElementById('darkModeToggle').checked = true;
   document.body.classList.add('dark');
 }
 
 buildData();
-setInterval(buildData, 600000);
+setInterval(buildData, 600000); // auto-refresh every 10 minutes
 </script>
 </body>
 </html>
-
