@@ -30,7 +30,11 @@
     .controls-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center; }
     .control-input { width:240px!important; max-width:100%; }
     .refresh-btn { white-space:nowrap; }
-    @media(max-width:576px){.controls-row{flex-direction:column;align-items:stretch}.control-input{width:100%!important}}
+    @media(max-width:991px){
+      .order-mobile-1 { order:1; }
+      .order-mobile-2 { order:2; }
+      #topicList { max-height:50vh; }
+    }
     .training-link { color:#007bff; text-decoration:underline; }
     body.dark .training-link { color:#4dabf7; }
     .schedule-training { color:inherit; font-weight:500; }
@@ -44,7 +48,7 @@
   </div>
   <div class="card mb-4"><div class="card-body text-center py-4">
     <h1 class="display-5 fw-bold text-primary">LWA Training Tracker</h1>
-    <p class="lead">Live from LWA Training Tracker Google Sheets — Click to explore</p>
+    <p class="lead">Live from Google Sheets — Click to explore</p>
     <div class="status-bar text-muted" id="status">Loading...</div>
     <div class="controls-row mt-3">
       <input type="text" id="topicSearch" class="form-control form-control-sm control-input" placeholder="Search topics…">
@@ -56,23 +60,33 @@
       </div>
     </div>
   </div></div>
+
   <div class="row">
-    <div class="col-lg-4 mb-4"><div class="card h-100">
-      <div class="card-header bg-primary text-white"><strong>Training Topics</strong></div>
-      <div class="card-body p-0"><div id="topicList" class="list-group list-group-flush" style="max-height:70vh;overflow-y:auto"></div></div>
-    </div></div>
-    <div class="col-lg-8"><div id="detailPane" class="card h-100">
-      <div class="card-body d-flex align-items-center justify-content-center text-muted">
-        <p class="mb-0 fs-5">Click a topic or employee</p>
+    <!-- Details pane — appears FIRST on mobile -->
+    <div class="col-lg-8 order-mobile-1 mb-4">
+      <div id="detailPane" class="card h-100">
+        <div class="card-body d-flex align-items-center justify-content-center text-muted">
+          <p class="mb-0 fs-5">Click a topic or employee</p>
+        </div>
       </div>
-    </div></div>
+    </div>
+
+    <!-- Topics list — appears SECOND on mobile -->
+    <div class="col-lg-4 order-mobile-2 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-primary text-white"><strong>Training Topics</strong></div>
+        <div class="card-body p-0">
+          <div id="topicList" class="list-group list-group-flush" style="max-height:70vh;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
 <script>
-// IMPORTANT: Publish your sheet (the one with headers) to CSV and paste the new link here
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMwtFhCZCDqPeWROrxXY6ytBvitNzyVKfGyNRQ5lfTXChyrqJDwBET4tRF4ocoSsafk0O0fUwoDxj6/pub?gid=1442283748&single=true&output=csv';
 
-const RECIPIENT_EMAIL = 'lphillips@lloydaubry.com'; // Update this
+const RECIPIENT_EMAIL = 'your-team@company.com'; // ← Change this to the real email
 
 const LINKS = {
   "Fall Protection": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
@@ -100,7 +114,7 @@ async function loadData() {
       const rec = {};
       headers.forEach((h, i) => rec[h] = vals[i] || '');
       return rec;
-    }).filter(r => r['Employee Name'] && r['Topic'] && r['Status']); // Filter valid records
+    }).filter(r => r['Employee Name'] && r['Topic'] && r['Status']);
     document.getElementById('status').innerHTML = `Loaded <strong>${records.length}</strong> records`;
     return records;
   } catch (err) {
@@ -117,7 +131,6 @@ function parseTextDate(dateStr) {
     const [_, month, day, year] = match;
     return new Date(year, months[month], day).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   }
-  // Fallback for MM/DD/YYYY
   const parts = dateStr.split('/');
   if (parts.length === 3) {
     return new Date(parts[2], parts[0]-1, parts[1]).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -328,5 +341,3 @@ setInterval(buildData, 600000);
 </script>
 </body>
 </html>
-
-
