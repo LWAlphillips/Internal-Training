@@ -7,15 +7,6 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://html2canvas.hertzen.com/<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>LWA Training Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     body { background:#f4f6f9; font-family:system-ui; transition:all .3s; }
@@ -89,10 +80,10 @@
 </div>
 
 <script>
-// YOUR CURRENT PUBLISHED CSV URL
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5QXu7Ex4SrxKH0k3wHYu_V1zP2GHSDglUCu-y3-ovyMimoSsixRd7VqYxLGMMoA7Yfr74LNv7hp5x/pub?output=csv';
+// YOUR WORKING CSV URL
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvlrJntmWAC6O0BVSC7FC-mPSoPdm_04b87hQTnHFhHAVXaf9qC2zV5_DsM2yq4g/pub?gid=1966793611&single=true&output=csv';
 
-const RECIPIENT_EMAIL = 'your-team@company.com'; // ← CHANGE THIS TO THE REAL EMAIL ADDRESS
+const RECIPIENT_EMAIL = 'your-team@company.com'; // ← CHANGE THIS
 
 const LINKS = {
   "Fall Protection": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
@@ -103,7 +94,7 @@ const LINKS = {
   "Fire Prevention and Extinguishers": "https://www.surveymonkey.com/r/LWABasicFirePreventionQuiz"
 };
 
-// FULL LIST FOR TOPICS SIDEBAR (all possible trainings)
+// FULL LIST FOR TOPICS SIDEBAR
 const ALL_TRAININGS = [
   "40-Hour Hazwoper",
   "Air Products- Martinez Safety Indoct",
@@ -144,360 +135,27 @@ const ALL_TRAININGS = [
   "Silica Awareness Training",
   "Tesoro Martinez CA Site Specific",
   "Valley Fever Awareness",
-  "Workplace Violence Prevention",
-  "Harassment & Discrimination Training",
-  "Workplace Violence Property Assessment"
+  "Workplace Violence Prevention"
 ];
 
-// REQUIRED TRAININGS – always shown in employee view (with No Record if missing) AND email includes missing/overdue
+// REQUIRED TRAININGS (always shown in employee view + email for missing/overdue)
 const REQUIRED_TRAININGS = [
   "Fall Protection",
   "Chemical Hazard Safety", // HazCom
   "Heat Illness Prevention (Indoor)",
   "Heat Illness Prevention (Outdoor)",
-  "Valley Fever Awareness", // Wildfire Smoke Protection? Adjust if name differs
-  "Workplace Violence Prevention"
-];
-
-// SUGGESTED TRAININGS – shown in employee view (with No Record if missing) but email ONLY if overdue
-const SUGGESTED_TRAININGS = [
-  "Confined Space",
-  "Forklift Training",
-  "Mobile Elevated Work Platform", // MEWP Training
-  "First Aid/CPR/AED",
-  "Harassment & Discrimination Training",
-  "Workplace Violence Property Assessment"
-];
-
-let records = [], topicMap = {}, employeeMap = {}, allTopics = new Set();
-
-async function loadData() {
-  document.getElementById('status').innerHTML = 'Fetching data...';
-  try {
-    const resp = await fetch(SHEET_URL + '&_=' + Date.now());
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const text = await resp.text();
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length < 1) throw new Error('No data');
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    records = lines.slice(1).map(line => {
-      const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-      const rec = {};
-      headers.forEach((h, i) => rec[h] = vals[i] || '');
-      return rec;
-    }).filter(r => r['Employee Name'] && r['Topic']);
-    document.getElementById('status').innerHTML = `Loaded <strong>${records.length}</strong> records`;
-    return records;
-  } catch (err) {
-    document.getElementById('status').innerHTML = `<span class="text-danger">Error: ${err.message}</span>`;
-    return [];
-  }
-}
-
-function parseTextDate(dateStr) {
-  if (!dateStr) return 'N/A';
-  const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  const match = dateStr.match(/(\w{3})\s+(\d{1,2}),\s+(\d{4})/);
-  if (match) {
-    const [_, month, day, year] = match;
-    return new Date(year, months[month], day).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-  const parts = dateStr.split('/');
-  if (parts.length === 3) {
-    return new Date(parts[2], parts[0]-1, parts[1]).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  }
-  return dateStr || 'N/A';
-}
-
-function normalizeName(name) {
-  return name?.replace(/Perira/gi, 'Pereira')
-    .replace(/Silviera/gi, 'Silveira')
-    .replace(/[^\w\s]/g, '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ') || '';
-}
-
-function badge(r) {
-  const s = r['Status'] || '';
-  const days = r['Days Remaining'] || '';
-  const comp = r['Completion Date'] ? parseTextDate(r['Completion Date']) : '';
-  if (s === 'Completed') return `<span class="badge badge-comp">Completed${comp !== 'N/A' ? ' (' + comp + ')' : ''}</span>`;
-  if (s === 'Not Due') return `<span class="badge badge-due">Not Due${days ? ' (' + days + 'd)' : ''}</span>`;
-  if (s === 'Overdue') return `<span class="badge badge-over">Overdue${days ? ' (' + days + 'd)' : ''}</span>`;
-  return `<span class="badge bg-secondary">${s || '—'}</span>`;
-}
-
-async function exportPDF() {
-  // unchanged
-}
-
-function openOutlookEmail(normName) {
-  const emp = employeeMap[normName];
-  if (!emp) return;
-  const fullName = emp.original;
-  const firstName = fullName.split(' ')[0];
-
-  const actionItems = [];
-
-  // REQUIRED: missing OR overdue
-  REQUIRED_TRAININGS.forEach(topic => {
-    const r = emp.records[topic];
-    let link = LINKS[topic] || Object.keys(LINKS).find(key => topic.includes(key) || key.includes(topic));
-    const finalLink = link ? LINKS[link] : 'Schedule Training';
-
-    if (r && r['Status'] === 'Overdue') {
-      const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
-      const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
-      actionItems.push(`• ${topic} (REQUIRED)\n  (Training: ${trainDate} | Expires: ${exp})\n  Status: Overdue\n  ${finalLink}`);
-    } else if (!r) {
-      actionItems.push(`• ${topic} (REQUIRED)\n  Status: No Record / Missing\n  ${finalLink}`);
-    }
-  });
-
-  // SUGGESTED: only if overdue
-  SUGGESTED_TRAININGS.forEach(topic => {
-    const r = emp.records[topic];
-    if (r && r['Status'] === 'Overdue') {
-      let link = LINKS[topic] || Object.keys(LINKS).find(key => topic.includes(key) || key.includes(topic));
-      const finalLink = link ? LINKS[link] : 'Schedule Training';
-      const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
-      const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
-      actionItems.push(`• ${topic} (Suggested)\n  (Training: ${trainDate} | Expires: ${exp})\n  Status: Overdue\n  ${finalLink}`);
-    }
-  });
-
-  const count = actionItems.length;
-  const body = `Hi ${firstName},
-
-You have ${count} training${count !== 1 ? 's' : ''} needing attention:
-
-${actionItems.join('\n\n') || '• None'}
-
-Please complete as soon as possible.
-
-Generated: ${new Date().toLocaleString()}
-
-LWA Training Tracker`;
-
-  location.href = `mailto:${RECIPIENT_EMAIL}?subject=Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
-}
-
-async function buildData() {
-  // unchanged
-}
-
-function renderTopics(filter = '') {
-  const el = document.getElementById('topicList');
-  el.innerHTML = '';
-  ALL_TRAININGS.sort().forEach(t => {
-    if (filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
-    const count = topicMap[t]?.length || 0;
-    let link = LINKS[t] || Object.keys(LINKS).find(key => t.includes(key) || key.includes(t));
-    const finalLink = link ? LINKS[link] : '';
-    const item = document.createElement('a');
-    item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-    if (finalLink) {
-      item.innerHTML = `<a href="${finalLink}" target="_blank" class="training-link me-2">${t}</a> <span class="badge bg-primary rounded-pill">${count}</span>`;
-    } else {
-      item.innerHTML = `<span class="schedule-training">${t}</span> <span class="badge bg-primary rounded-pill">${count}</span>`;
-    }
-    item.onclick = e => { if (e.target.tagName === 'A') return; showTopicDetail(t); };
-    el.appendChild(item);
-  });
-}
-
-// other functions unchanged
-
-function showEmployeeDetail(norm) {
-  const emp = employeeMap[norm];
-  if (!emp) return;
-  const name = emp.original;
-  const over = Object.entries(emp.records).filter(([,r]) => r['Status'] === 'Overdue').length;
-  let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${name}</h4><div><button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button><button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button></div></div><p class="text-muted">Required & suggested trainings + any completed | Overdues: ${over}</p><div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Topic</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
-
-  const displayedTopics = new Set();
-
-  // Always show required and suggested (with No Record if missing)
-  [...REQUIRED_TRAININGS, ...SUGGESTED_TRAININGS].forEach(t => displayedTopics.add(t));
-
-  // Add any other topic the employee has a record for
-  Object.keys(emp.records).forEach(t => displayedTopics.add(t));
-
-  Array.from(displayedTopics).sort().forEach(topic => {
-    const r = emp.records[topic];
-    let link = LINKS[topic] || Object.keys(LINKS).find(k => topic.includes(k) || k.includes(topic));
-    const finalLink = link ? LINKS[link] : '';
-    const cell = finalLink ? `<a href="${finalLink}" target="_blank" class="training-link">${topic}</a>` : topic;
-
-    if (r) {
-      html += `<tr><td>${cell}</td><td>${parseTextDate(r['Training Date'])}</td><td>${parseTextDate(r['Completion Date'])}</td><td>${parseTextDate(r['Expiration Date'])}</td><td>${r['Days Remaining'] || '-'}</td><td>${badge(r)}</td></tr>`;
-    } else {
-      // Show "No Record" only for required + suggested
-      html += `<tr class="table-secondary"><td>${cell}</td><td colspan="5"><span class="badge badge-norecord">No Record</span></td></tr>`;
-    }
-  });
-
-  html += `</tbody></table></div></div>`;
-  document.getElementById('detailPane').innerHTML = html;
-}
-
-// rest of script unchanged
-
-buildData();
-setInterval(buildData, 600000);
-</script>
-</body>
-</html>dist/html2canvas.min.js"></script>
-  <style>
-    body { background:#f4f6f9; font-family:system-ui; transition:all .3s; }
-    body.dark { background:#121212; color:#e0e0e0; }
-    body.dark .card { background:#1e1e1e; color:#e0e0e0; border:1px solid #333; }
-    body.dark table th { background:#343a40; color:#fff; }
-    body.dark .table { color:#e0e0e0; }
-    body.dark .table-hover tbody tr:hover { background:#2c2c2c; }
-    body.dark .list-group-item { background:#2c2c2c!important; color:#e0e0e0!important; border-color:#444!important; }
-    body.dark .list-group-item:hover { background:#3a3a3a!important; }
-    .card { box-shadow:0 4px 12px rgba(0,0,0,.07); border:none; border-radius:12px; }
-    .badge-due { background:#28a745; color:#fff; }
-    .badge-over { background:#dc3545; color:#fff; }
-    .badge-comp { background:#6c757d; color:#fff; }
-    .badge-notify { background:#ffc107; color:#000; }
-    .badge-norecord { background:#6c757d; color:#fff; }
-    .list-group-item:hover { background:#e9ecef; cursor:pointer; }
-    table th { background:#343a40; color:#fff; }
-    .overdue-banner { background:#dc3545; color:#fff; padding:10px; border-radius:8px; margin-bottom:20px; }
-    body.dark .overdue-banner { background:#bb2d3b; }
-    .controls-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center; }
-    .control-input { width:240px!important; max-width:100%; }
-    .refresh-btn { white-space:nowrap; }
-    @media(max-width:991px){
-      .order-mobile-1 { order:1; }
-      .order-mobile-2 { order:2; }
-      #topicList { max-height:50vh; }
-    }
-    .training-link { color:#007bff; text-decoration:underline; }
-    body.dark .training-link { color:#4dabf7; }
-    .schedule-training { color:inherit; font-weight:500; }
-    body.dark .schedule-training { color:#ccc; }
-  </style>
-</head>
-<body class="p-3">
-<div class="container-fluid">
-  <div id="overdueBanner" class="overdue-banner d-none">
-    <strong>Overdue Alert:</strong> <span id="overdueCount"></span> trainings overdue for <span id="overdueEmps"></span> employees.
-  </div>
-  <div class="card mb-4"><div class="card-body text-center py-4">
-    <h1 class="display-5 fw-bold text-primary">LWA Training Tracker</h1>
-    <p class="lead">Live from Google Sheets — Click to explore</p>
-    <div class="status-bar text-muted" id="status">Loading...</div>
-    <div class="controls-row mt-3">
-      <input type="text" id="topicSearch" class="form-control form-control-sm control-input" placeholder="Search topics…">
-      <select id="employeeSelect" class="form-select form-select-sm control-input"><option value="">— Jump to employee —</option></select>
-      <button class="btn btn-outline-primary btn-sm refresh-btn" onclick="buildData()">Refresh</button>
-      <div class="form-check form-switch ms-2">
-        <input class="form-check-input" type="checkbox" id="darkModeToggle">
-        <label class="form-check-label text-muted small" for="darkModeToggle">Dark</label>
-      </div>
-    </div>
-  </div></div>
-  <div class="row">
-    <div class="col-lg-8 order-mobile-1 mb-4">
-      <div id="detailPane" class="card h-100">
-        <div class="card-body d-flex align-items-center justify-content-center text-muted">
-          <p class="mb-0 fs-5">Click a topic or employee</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg-4 order-mobile-2 mb-4">
-      <div class="card h-100">
-        <div class="card-header bg-primary text-white"><strong>Training Topics</strong></div>
-        <div class="card-body p-0">
-          <div id="topicList" class="list-group list-group-flush" style="max-height:70vh;overflow-y:auto"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-// YOUR CURRENT PUBLISHED CSV URL
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5QXu7Ex4SrxKH0k3wHYu_V1zP2GHSDglUCu-y3-ovyMimoSsixRd7VqYxLGMMoA7Yfr74LNv7hp5x/pub?output=csv';
-
-const RECIPIENT_EMAIL = 'your-team@company.com'; // ← CHANGE THIS TO THE REAL EMAIL ADDRESS
-
-const LINKS = {
-  "Fall Protection": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
-  "Heat Illness Prevention (Indoor)": "https://www.surveymonkey.com/r/LWAIndoorHeatIllness",
-  "Personal Protective Equipment": "https://www.surveymonkey.com/r/LWAPPEQuiz",
-  "Silica Awareness Training": "https://www.surveymonkey.com/r/LWASilicaDustExposure",
-  "Silica Dust Exposure": "https://www.surveymonkey.com/r/LWASilicaDustExposure",
-  "Workplace Violence Prevention": "https://www.surveymonkey.com/r/LWAWVPP",
-  "Fire Prevention and Extinguishers": "https://www.surveymonkey.com/r/LWABasicFirePreventionQuiz"
-};
-
-// FULL LIST OF ALL POSSIBLE TRAININGS (used for Topics sidebar)
-const ALL_TRAININGS = [
-  "40-Hour Hazwoper",
-  "Air Products- Martinez Safety Indoct",
-  "Andeaver Martinez Site Orientation",
-  "CRIS Certificate",
-  "Certified General Electrician",
-  "Certified Rigger and Signaler",
-  "Chemical Hazard Safety",
-  "Confined Space",
-  "Electrical Safety Awareness",
-  "Fall Protection",
-  "Fire Prevention and Extinguishers",
-  "First Aid/CPR/AED",
-  "Forklift Training",
-  "Heat Illness Prevention (Indoor)",
-  "Heat Illness Prevention (Outdoor)",
-  "Intro to First Aid",
-  "LOTO",
-  "MEWP Fall Protection",
-  "Machine Safe Guarding",
-  "Mobile Elevated Work Platform",
-  "NCCO Crane Operations",
-  "Northern California RSO",
-  "OSCA Card",
-  "OSHA 10 Certificate",
-  "OSHA 30 Certificate",
-  "OSHA 500 Certificate",
-  "OSHA 510 Certificate",
-  "PG&E SAFE 0101 Training",
-  "Part 46 New Miner",
-  "Part 46 Refresher",
-  "Part 48 New Miner",
-  "Part 48 Refresher",
-  "Personal Protective Equipment",
-  "Respiratory Fit Testing",
-  "Respiratory Medical Questionnare",
-  "Shell Martinez Site Specific",
-  "Silica Awareness Training",
-  "Tesoro Martinez CA Site Specific",
   "Valley Fever Awareness",
   "Workplace Violence Prevention"
 ];
 
-// REQUIRED TRAININGS (always shown in employee view + used for email reminders)
-const REQUIRED_TRAININGS = [
-  "40-Hour Hazwoper",
+// SUGGESTED TRAININGS (shown in employee view + email only if overdue)
+const SUGGESTED_TRAININGS = [
   "Confined Space",
-  "Fall Protection",
-  "Fire Prevention and Extinguishers",
-  "First Aid/CPR/AED",
   "Forklift Training",
-  "Heat Illness Prevention (Indoor)",
-  "Heat Illness Prevention (Outdoor)",
   "Mobile Elevated Work Platform",
-  "Personal Protective Equipment",
-  "Silica Awareness Training",
-  "Workplace Violence Prevention",
-  "Part 46 New Miner",
-  "Part 46 Refresher",
-  "Respiratory Fit Testing",
-  "Respiratory Medical Questionnare"
+  "First Aid/CPR/AED",
+  "Harassment & Discrimination Training",
+  "Workplace Violence Property Assessment"
 ];
 
 let records = [], topicMap = {}, employeeMap = {}, allTopics = new Set();
@@ -606,26 +264,37 @@ function openOutlookEmail(normName) {
     if (r && r['Status'] === 'Overdue') {
       const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
       const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
-      actionItems.push(`• ${topic}\n  (Training: ${trainDate} | Expires: ${exp})\n  Status: Overdue\n  ${finalLink}`);
+      actionItems.push(`• ${topic} (REQUIRED)\n  (Training: ${trainDate} | Expires: ${exp})\n  Status: Overdue\n  ${finalLink}`);
     } else if (!r) {
-      actionItems.push(`• ${topic}\n  Status: No Record / Missing\n  ${finalLink}`);
+      actionItems.push(`• ${topic} (REQUIRED)\n  Status: No Record / Missing\n  ${finalLink}`);
+    }
+  });
+
+  SUGGESTED_TRAININGS.forEach(topic => {
+    const r = emp.records[topic];
+    if (r && r['Status'] === 'Overdue') {
+      let link = LINKS[topic] || Object.keys(LINKS).find(key => topic.includes(key) || key.includes(topic));
+      const finalLink = link ? LINKS[link] : 'Schedule Training';
+      const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
+      const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
+      actionItems.push(`• ${topic} (Suggested)\n  (Training: ${trainDate} | Expires: ${exp})\n  Status: Overdue\n  ${finalLink}`);
     }
   });
 
   const count = actionItems.length;
   const body = `Hi ${firstName},
 
-You have ${count} required training${count !== 1 ? 's' : ''} that ${count !== 1 ? 'are' : 'is'} either overdue or missing:
+You have ${count} training${count !== 1 ? 's' : ''} needing attention:
 
 ${actionItems.join('\n\n') || '• None'}
 
-Please complete or schedule these as soon as possible.
+Please complete as soon as possible.
 
 Generated: ${new Date().toLocaleString()}
 
 LWA Training Tracker`;
 
-  location.href = `mailto:${RECIPIENT_EMAIL}?subject=Required Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
+  location.href = `mailto:${RECIPIENT_EMAIL}?subject=Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
 }
 
 async function buildData() {
@@ -715,23 +384,21 @@ function showEmployeeDetail(norm) {
   if (!emp) return;
   const name = emp.original;
   const over = Object.entries(emp.records).filter(([,r]) => r['Status'] === 'Overdue').length;
-  let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${name}</h4><div><button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button><button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button></div></div><p class="text-muted">Required + Completed trainings | Overdues: ${over}</p><div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Topic</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
+  let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${name}</h4><div><button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button><button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button></div></div><p class="text-muted">Required & suggested trainings + any completed | Overdues: ${over}</p><div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Topic</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
 
-  // Combine required trainings (with No Record if missing) + any other trainings that have a record
-  const displayedTopics = new Set(REQUIRED_TRAININGS);
+  const displayedTopics = new Set([...REQUIRED_TRAININGS, ...SUGGESTED_TRAININGS]);
 
-  // Add any topics the employee actually has a record for (even if not required)
-  Object.keys(emp.records).forEach(topic => displayedTopics.add(topic));
+  Object.keys(emp.records).forEach(t => displayedTopics.add(t));
 
   Array.from(displayedTopics).sort().forEach(topic => {
     const r = emp.records[topic];
     let link = LINKS[topic] || Object.keys(LINKS).find(k => topic.includes(k) || k.includes(topic));
     const finalLink = link ? LINKS[link] : '';
     const cell = finalLink ? `<a href="${finalLink}" target="_blank" class="training-link">${topic}</a>` : topic;
+
     if (r) {
       html += `<tr><td>${cell}</td><td>${parseTextDate(r['Training Date'])}</td><td>${parseTextDate(r['Completion Date'])}</td><td>${parseTextDate(r['Expiration Date'])}</td><td>${r['Days Remaining'] || '-'}</td><td>${badge(r)}</td></tr>`;
     } else {
-      // Only show "No Record" for required trainings that are missing
       html += `<tr class="table-secondary"><td>${cell}</td><td colspan="5"><span class="badge badge-norecord">No Record</span></td></tr>`;
     }
   });
@@ -755,4 +422,3 @@ setInterval(buildData, 600000);
 </script>
 </body>
 </html>
-
