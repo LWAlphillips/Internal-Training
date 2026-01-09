@@ -80,13 +80,13 @@
 </div>
 
 <script>
-// CORRECT CLEAN CSV URL FOR YOUR "Tracker" TAB
+// YOUR CLEAN CSV URL
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRV7v_0mQWcqJI9ExD7lphRQDaHnyv65Tp_i2uDiBJOcxAJ5l6jXV1-WFFBKSU9YZErgLDkGB6nYmug/pub?output=csv';
 
 const RECIPIENT_EMAIL = 'your-team@company.com'; // ← CHANGE TO REAL EMAIL
 
 const LINKS = {
-  "Fall Protection Awareness": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
+  "Fall Protection": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
   "Hazard Communication (HazCom/GHS)": "https://www.surveymonkey.com/r/LWAHazCom",
   "Indoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAIndoorHeatIllness",
   "Outdoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAHeatIllnessQuiz",
@@ -145,9 +145,9 @@ const ALL_TRAININGS = [
   "Wildfire Smoke Protection"
 ];
 
-// REQUIRED TRAININGS
+// REQUIRED TRAININGS – using "Fall Protection" as the canonical name (covers Awareness too)
 const REQUIRED_TRAININGS = [
-  "Fall Protection Awareness",
+  "Fall Protection",
   "Hazard Communication (HazCom/GHS)",
   "Indoor Heat Illness Prevention",
   "Outdoor Heat Illness Prevention",
@@ -230,7 +230,6 @@ async function exportPDF() {
     const pane = document.querySelector('#detailPane .card-body');
     if (!pane) { alert('Click an employee or topic first'); return; }
     const clone = pane.cloneNode(true);
-
     // Add hyperlinks for PDF
     clone.querySelectorAll('td:first-child').forEach(td => {
       const topic = td.textContent.trim();
@@ -239,7 +238,6 @@ async function exportPDF() {
         td.innerHTML = `<a href="${link}" style="color:#007bff; text-decoration:underline;">${topic}</a>`;
       }
     });
-
     clone.style.padding = '20px';
     clone.style.background = '#fff';
     clone.style.border = '1px solid #ddd';
@@ -320,8 +318,11 @@ async function buildData() {
   let overdueCount = 0, overdueEmps = new Set();
 
   records.forEach(r => {
+    let topic = r['Topic'];
+    // Normalize Fall Protection Awareness to Fall Protection
+    if (topic === "Fall Protection Awareness") topic = "Fall Protection";
+
     const orig = r['Employee Name'];
-    const topic = r['Topic'];
     const status = r['Status'] || '';
     const norm = normalizeName(orig);
     if (!norm || !topic) return;
