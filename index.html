@@ -143,7 +143,6 @@ let records = [], topicMap = {}, employeeMap = {}, allOverdue = [];
 
 async function loadData() {
   const statusEl = document.getElementById('status');
-  if (!statusEl) return console.error("Status element missing");
   statusEl.innerHTML = 'Fetching data...';
   try {
     const resp = await fetch(SHEET_URL + '&_=' + Date.now());
@@ -160,15 +159,14 @@ async function loadData() {
     updateLastUpdated();
     return records;
   } catch (err) {
-    console.error("Load error:", err);
     statusEl.innerHTML = `<span class="text-danger">Error: ${err.message}</span>`;
     return [];
   }
 }
 
 function updateLastUpdated() {
-  const el = document.getElementById('lastUpdated');
-  if (el) el.textContent = `Last loaded: ${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`;
+  document.getElementById('lastUpdated').textContent = 
+    `Last loaded: ${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`;
 }
 
 function parseTextDate(dateStr) {
@@ -218,12 +216,8 @@ function daysLeftStyle(daysStr) {
 }
 
 async function buildData() {
-  console.log("buildData started");
   records = await loadData();
-  if (!records.length) {
-    console.warn("No records loaded");
-    return;
-  }
+  if (!records.length) return;
 
   topicMap = {};
   employeeMap = {};
@@ -258,7 +252,6 @@ async function buildData() {
     }
   });
 
-  // Flag missing required trainings
   Object.values(employeeMap).forEach(emp => {
     Object.keys(TRAINING_RULES).forEach(t => {
       if (isRequiredForRole(t, emp.role) && !emp.records[t]) {
@@ -269,40 +262,31 @@ async function buildData() {
     });
   });
 
-  const overdueEl = document.getElementById('overdueCount');
-  const empsEl = document.getElementById('overdueEmps');
-  const bannerEl = document.getElementById('overdueBanner');
-  if (overdueEl) overdueEl.textContent = overdueCount;
-  if (empsEl) empsEl.textContent = overdueEmps.size;
-  if (bannerEl) bannerEl.classList.toggle('d-none', overdueCount === 0);
+  document.getElementById('overdueCount').textContent = overdueCount;
+  document.getElementById('overdueEmps').textContent = overdueEmps.size;
+  document.getElementById('overdueBanner').classList.toggle('d-none', overdueCount === 0);
 
-  // Populate role filter
   const roleSelect = document.getElementById('roleFilter');
-  if (roleSelect) {
-    const prev = roleSelect.value;
-    roleSelect.innerHTML = '<option value="">— All Roles —</option>';
-    [...uniqueRoles].sort().forEach(role => {
-      const opt = document.createElement('option');
-      opt.value = role.toLowerCase();
-      opt.textContent = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-      roleSelect.appendChild(opt);
-    });
-    if (prev) {
-      const lower = prev.toLowerCase();
-      const match = Array.from(roleSelect.options).find(o => o.value === lower);
-      if (match) roleSelect.value = match.value;
-    }
+  const prevRole = roleSelect.value;
+  roleSelect.innerHTML = '<option value="">— All Roles —</option>';
+  [...uniqueRoles].sort().forEach(role => {
+    const opt = document.createElement('option');
+    opt.value = role.toLowerCase();
+    opt.textContent = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+    roleSelect.appendChild(opt);
+  });
+  if (prevRole) {
+    const lower = prevRole.toLowerCase();
+    const match = Array.from(roleSelect.options).find(o => o.value === lower);
+    if (match) roleSelect.value = match.value;
   }
 
   renderTopics(document.getElementById('topicSearch')?.value.trim() || '');
   populateEmployeeDropdown();
-
-  console.log("buildData finished - employees:", Object.keys(employeeMap).length);
 }
 
 function renderTopics(filter = '') {
   const el = document.getElementById('topicList');
-  if (!el) return;
   el.innerHTML = '';
   const topics = Object.keys(topicMap).sort();
   topics.forEach(t => {
@@ -319,10 +303,7 @@ function renderTopics(filter = '') {
 function populateEmployeeDropdown() {
   const sel = document.getElementById('employeeSelect');
   const roleEl = document.getElementById('roleFilter');
-  if (!sel || !roleEl) return console.error("Dropdowns missing");
-
   const selectedRole = roleEl.value.trim().toLowerCase();
-  console.log("Populating employees - selected role:", selectedRole || "[All]");
 
   sel.innerHTML = '<option value="">— Jump to employee —</option>';
 
@@ -350,36 +331,206 @@ function populateEmployeeDropdown() {
   sel.onchange = e => { if (e.target.value) showEmployeeDetail(e.target.value); };
 }
 
-// Placeholder for your other functions - add them here
 function showTopicDetail(topic) {
-  // Your existing code for showing topic details
-  console.log("Showing topic:", topic);
-  // ... add your full implementation ...
+  const recs = topicMap[topic] || [];
+  let html = `<div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <h4>${topic}</h4>
+      <button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button>
+    </div>
+    <p class="text-muted mb-3">${recs.length} record(s)</p>
+    <div class="table-responsive">`;
+
+  const isMobile = window.innerWidth < 768;
+  if (isMobile) {
+    recs.forEach(r => {
+      const days = r['Days Remaining'] || '-';
+      html += `
+        <div class="training-card border">
+          <h5>${r['Employee Name']}</h5>
+          <div class="detail-grid">
+            <div><span class="label">Training Date</span>${parseTextDate(r['Training Date'])}</div>
+            <div><span class="label">Completion</span>${parseTextDate(r['Completion Date'])}</div>
+            <div><span class="label">Expires</span>${parseTextDate(r['Expiration Date'])}</div>
+            <div><span class="label">Days Left</span><span class="${daysLeftStyle(days)}">${days}</span></div>
+            <div><span class="label">Status</span>${badge(r)}</div>
+          </div>
+        </div>`;
+    });
+  } else {
+    html += `<table class="table table-sm table-hover"><thead><tr><th>Employee</th><th>Training Date</th><th>Completion Date</th><th>Expires</th><th>Days Left</th><th>Status</th></tr></thead><tbody>`;
+    recs.forEach(r => {
+      const norm = normalizeName(r['Employee Name']);
+      html += `<tr><td><a href="javascript:void(0)" onclick="showEmployeeDetail('${norm}')">${r['Employee Name']}</a></td><td>${parseTextDate(r['Training Date'])}</td><td>${parseTextDate(r['Completion Date'])}</td><td>${parseTextDate(r['Expiration Date'])}</td><td class="${daysLeftStyle(r['Days Remaining'])}">${r['Days Remaining'] || '-'}</td><td>${badge(r)}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  html += `</div></div>`;
+  document.getElementById('detailPane').innerHTML = html;
 }
 
 function showEmployeeDetail(norm) {
-  // Your existing code
-  console.log("Showing employee:", norm);
-  // ... add your full implementation ...
+  const emp = employeeMap[norm];
+  if (!emp) return;
+  const name = emp.original;
+  const roleDisplay = emp.role ? emp.role.charAt(0).toUpperCase() + emp.role.slice(1).toLowerCase() : 'Unknown';
+
+  let html = `<div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h4>${name}</h4>
+        <div class="text-muted">Role: ${roleDisplay}</div>
+      </div>
+      <div>
+        <button class="btn btn-success btn-sm me-2" onclick="exportPDF()">PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button>
+      </div>
+    </div>
+    <div class="table-responsive">`;
+
+  const addSection = (title, topics, highlightMissing = false) => {
+    if (topics.length === 0) return;
+    const isMobile = window.innerWidth < 768;
+    html += `<div class="section-header">${title}</div>`;
+
+    if (isMobile) {
+      topics.sort().forEach(topic => {
+        const r = emp.records[topic];
+        const days = r?.['Days Remaining'] || '-';
+        const statusHtml = badge(r || { Status: 'No Record' });
+        let border = '';
+        if (highlightMissing && !r) border = 'border-warning';
+        else if (['Overdue','Due Soon'].includes(r?.Status)) border = 'border-danger';
+        html += `
+          <div class="training-card border ${border}">
+            <h5>${topic}</h5>
+            <div class="detail-grid">
+              <div><span class="label">Training Date</span>${parseTextDate(r?.['Training Date'])}</div>
+              <div><span class="label">Completion</span>${parseTextDate(r?.['Completion Date'])}</div>
+              <div><span class="label">Expires</span>${parseTextDate(r?.['Expiration Date'])}</div>
+              <div><span class="label">Days Left</span><span class="${daysLeftStyle(days)}">${days}</span></div>
+              <div><span class="label">Status</span>${statusHtml}</div>
+            </div>
+          </div>`;
+      });
+    } else {
+      html += `<table class="table table-sm table-hover"><thead><tr><th>Topic</th><th>Training Date</th><th>Completion Date</th><th>Expires</th><th>Days Left</th><th>Status</th></tr></thead><tbody>`;
+      topics.sort().forEach(topic => {
+        const r = emp.records[topic];
+        let rowCls = '';
+        if (highlightMissing && !r) rowCls = 'table-warning';
+        else if (['Overdue','Due Soon'].includes(r?.Status)) rowCls = 'table-danger';
+        if (r) {
+          html += `<tr class="${rowCls}"><td>${topic}</td><td>${parseTextDate(r['Training Date'])}</td><td>${parseTextDate(r['Completion Date'])}</td><td>${parseTextDate(r['Expiration Date'])}</td><td class="${daysLeftStyle(r['Days Remaining'])}">${r['Days Remaining'] || '-'}</td><td>${badge(r)}</td></tr>`;
+        } else {
+          html += `<tr class="${rowCls}"><td>${topic}</td><td colspan="5"><span class="badge badge-norecord">No Record</span></td></tr>`;
+        }
+      });
+      html += `</tbody></table>`;
+    }
+  };
+
+  const requiredTopics = Object.keys(TRAINING_RULES).filter(t => isRequiredForRole(t, emp.role));
+  addSection(`Required for ${roleDisplay}`, requiredTopics, true);
+
+  const jobDepTopics = Object.keys(TRAINING_RULES).filter(t => TRAINING_RULES[t] === "Job Dependent");
+  addSection("Job Dependent Trainings", jobDepTopics);
+
+  const optionalTopics = Object.keys(TRAINING_RULES).filter(t => TRAINING_RULES[t] === "Optional");
+  addSection("Optional / Recommended", optionalTopics);
+
+  const additional = Object.keys(emp.records).filter(t => !Object.keys(TRAINING_RULES).includes(t));
+  addSection("Additional Trainings", additional);
+
+  html += `</div></div>`;
+  document.getElementById('detailPane').innerHTML = html;
 }
 
 function showAllOverdue() {
-  // Your existing code
-  console.log("Showing all overdue");
-  // ... add your full implementation ...
+  if (allOverdue.length === 0) {
+    document.getElementById('detailPane').innerHTML = `<div class="card-body text-center py-5"><p class="fs-4 text-success">No issues found! 🎉</p></div>`;
+    return;
+  }
+  let html = `<div class="card-body">
+    <h3 class="text-center mb-4 fw-bold text-danger">All Issues (${allOverdue.length})</h3>
+    <div class="table-responsive">`;
+
+  const isMobile = window.innerWidth < 768;
+  if (isMobile) {
+    allOverdue.sort((a,b) => a.employee.localeCompare(b.employee) || a.topic.localeCompare(b.topic)).forEach(item => {
+      const days = item['Days Remaining'] || 'N/A';
+      html += `
+        <div class="training-card border border-danger">
+          <h5>${item.employee} — ${item.topic}</h5>
+          <div class="detail-grid">
+            <div><span class="label">Training Date</span>${parseTextDate(item['Training Date'])}</div>
+            <div><span class="label">Expires</span>${parseTextDate(item['Expiration Date'])}</div>
+            <div><span class="label">Days</span><span class="text-danger fw-bold">${days}</span></div>
+            <div><span class="label">Status</span>${badge(item)}</div>
+          </div>
+        </div>`;
+    });
+  } else {
+    html += `<table class="table table-hover"><thead><tr><th>Employee</th><th>Topic</th><th>Training Date</th><th>Expires</th><th>Days</th><th>Status</th></tr></thead><tbody>`;
+    allOverdue.sort((a,b) => a.employee.localeCompare(b.employee) || a.topic.localeCompare(b.topic)).forEach(item => {
+      const days = item['Days Remaining'] || 'N/A';
+      html += `<tr><td>${item.employee}</td><td>${item.topic}</td><td>${parseTextDate(item['Training Date'])}</td><td>${parseTextDate(item['Expiration Date'])}</td><td class="text-danger fw-bold">${days}</td><td>${badge(item)}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  html += `</div></div>`;
+  document.getElementById('detailPane').innerHTML = html;
 }
 
-function exportPDF() {
-  // Your existing code
-  console.log("Export PDF called");
+async function exportPDF() {
+  const pane = document.querySelector('#detailPane .card-body');
+  if (!pane) return alert('Select something first');
+  const clone = pane.cloneNode(true);
+  clone.style.padding = '20px';
+  clone.style.background = '#fff';
+  document.body.appendChild(clone);
+  clone.style.position = 'absolute';
+  clone.style.left = '-9999px';
+  clone.style.width = '800px';
+  const canvas = await html2canvas(clone, { scale: 2 });
+  document.body.removeChild(clone);
+  const img = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const w = 190;
+  const h = (canvas.height * w) / canvas.width;
+  pdf.addImage(img, 'PNG', 10, 10, w, h);
+  const name = pane.querySelector('h4')?.textContent?.trim() || 'LWA-Report';
+  pdf.save(`${name.replace(/[^a-z0-9]/gi, '_')}.pdf`);
 }
 
 function openOutlookEmail(norm) {
-  // Your existing code
-  console.log("Email for:", norm);
+  const emp = employeeMap[norm];
+  if (!emp) return;
+  const fullName = emp.original;
+  const firstName = fullName.split(' ')[0];
+  const role = emp.role || 'Unknown';
+  const actionItems = [];
+
+  Object.keys(TRAINING_RULES).forEach(topic => {
+    const r = emp.records[topic];
+    if (isRequiredForRole(topic, role)) {
+      if (!r || ['Overdue','Due Soon'].includes(r.Status)) {
+        const status = r ? r.Status : 'No Record';
+        const days = r?.['Days Remaining'] || 'N/A';
+        actionItems.push(`• ${topic} (Required)\n   Status: ${status}${days !== 'N/A' ? ` (${days}d)` : ''}`);
+      }
+    } else if (r && ['Overdue','Due Soon'].includes(r.Status)) {
+      actionItems.push(`• ${topic}\n   Status: ${r.Status} (${r['Days Remaining'] || 'N/A'}d)`);
+    }
+  });
+
+  const count = actionItems.length;
+  const body = `Hi ${firstName},\n\nYou have ${count} training item${count !== 1 ? 's' : ''} needing attention:\n\n${actionItems.join('\n\n') || 'None'}\n\nPlease complete as soon as possible.\n\nGenerated from LWA Training Tracker • ${new Date().toLocaleString()}`;
+  location.href = `mailto:your-team@company.com?subject=Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
 }
 
-// Dark mode toggle (can stay global)
+// Dark mode toggle
 document.getElementById('darkModeToggle')?.addEventListener('change', e => {
   document.body.classList.toggle('dark', e.target.checked);
   localStorage.setItem('darkMode', e.target.checked ? 'true' : 'false');
@@ -390,26 +541,14 @@ if (localStorage.getItem('darkMode') === 'true') {
 }
 
 // ──────────────────────────────────────────────
-// WAIT FOR DOM TO BE READY BEFORE STARTING
+// START THE APP
 // ──────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("DOM ready - starting app");
-
-  // Attach event listeners
   document.getElementById('topicSearch')?.addEventListener('input', e => renderTopics(e.target.value.trim()));
+  document.getElementById('roleFilter')?.addEventListener('change', populateEmployeeDropdown);
 
-  document.getElementById('roleFilter')?.addEventListener('change', () => {
-    console.log("Role filter changed to:", document.getElementById('roleFilter').value);
-    populateEmployeeDropdown();
-  });
-
-  // Start loading data
-  buildData().catch(err => {
-    console.error("Initial load failed:", err);
-    const status = document.getElementById('status');
-    if (status) status.innerHTML = `<span class="text-danger">Critical error: ${err.message}</span>`;
-  });
-
+  buildData();
   setInterval(buildData, 900000);
 });
 </script>
