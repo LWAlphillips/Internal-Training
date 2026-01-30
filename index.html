@@ -10,7 +10,6 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
-    /* Your existing styles here – unchanged */
     body { background:#f4f6f9; font-family:system-ui; transition:all .3s; }
     body.dark { background:#121212; color:#e0e0e0; }
     body.dark .card { background:#1e1e1e; color:#e0e0e0; border:1px solid #333; }
@@ -52,10 +51,12 @@
   </style>
 </head>
 <body class="p-3">
+
 <div class="container-fluid">
   <div id="overdueBanner" class="overdue-banner d-none">
     <strong>Overdue Alert:</strong> <span id="overdueCount"></span> trainings overdue/due soon/missing for <span id="overdueEmps"></span> employees.
   </div>
+
   <div class="card mb-4">
     <div class="card-body text-center py-4">
       <h1 class="display-5 fw-bold text-primary">LWA Training Tracker</h1>
@@ -79,6 +80,7 @@
       </div>
     </div>
   </div>
+
   <div class="row">
     <div class="col-lg-8 order-mobile-1 mb-4">
       <div id="detailPane" class="card h-100">
@@ -99,29 +101,275 @@
 </div>
 
 <script>
-// All your functions here – paste the full script body you had, but wrapped
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("DOM fully loaded - starting app");
+  console.log("DOM ready - initializing LWA Training Tracker");
 
-  // ... PASTE ALL YOUR FUNCTIONS HERE (loadData, buildData, renderTopics, populateEmployeeDropdown, showTopicDetail, showEmployeeDetail, showAllOverdue, exportPDF, openOutlookEmail, etc.) ...
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRV7v_0mQWcqJI9ExD7lphRQDaHnyv65Tp_i2uDiBJOcxAJ5l6jXV1-WFFBKSU9YZErgLDkGB6nYmug/pub?output=csv';
 
-  // Make sure these lines are at the end, after functions are defined:
-  const roleFilter = document.getElementById('roleFilter');
-  if (roleFilter) {
-    roleFilter.addEventListener('change', () => {
-      console.log("Role changed to:", roleFilter.value);
-      populateEmployeeDropdown();
-    });
-  } else {
-    console.error("roleFilter element not found after DOMContentLoaded");
+  const TRAINING_RULES = {
+    "Fire Prevention and Extinguishers": "All Required",
+    "Workplace Violence Prevention": "All Required",
+    "Fall Protection": "Field Required",
+    "Heat Illness Prevention (Indoor)": "Field Required",
+    "Heat Illness Prevention (Outdoor)": "Field Required",
+    "Personal Protective Equipment": "Field Required",
+    "Silica Awareness Training": "Field Required",
+    "Wildfire Protection": "Field Required",
+    "First Aid/CPR/AED": "Foreman",
+    "Intro to First Aid": "Foreman",
+    "OSHA 30 Certificate": "Optional",
+    "Certified Rigger and Signaler": "Job Dependent",
+    "SpecialtyConfined Space": "Job Dependent",
+    "Confined Space": "Job Dependent",
+    "Forklift Training": "Job Dependent",
+    "Mobile Elevated Work Platform": "Job Dependent",
+    "NCCO Crane Operations": "Job Dependent",
+    "Part 46 New Miner": "Job Dependent",
+    "Part 46 Refresher": "Job Dependent",
+    "Respiratory Fit Testing": "Job Dependent",
+    "Respiratory Medical Questionnare": "Job Dependent",
+    "Silica Dust Exposure": "Job Dependent"
+  };
+
+  function isRequiredForRole(topic, role) {
+    const rule = TRAINING_RULES[topic];
+    if (!rule) return false;
+    const r = (role || '').trim().toLowerCase();
+    if (rule === "All Required") return true;
+    if (rule === "Field Required") return r === "field" || r === "foreman";
+    if (rule === "Foreman") return r === "foreman";
+    if (rule === "Office") return r === "office";
+    return false;
   }
 
-  // Initial load
-  buildData().catch(err => {
-    console.error("Initial build failed:", err);
-    const status = document.getElementById('status');
-    if (status) status.innerHTML = `<span class="text-danger">Critical error: ${err.message}. Check console.</span>`;
+  let records = [], topicMap = {}, employeeMap = {}, allOverdue = [];
+
+  async function loadData() {
+    const statusEl = document.getElementById('status');
+    if (!statusEl) return console.error("Status element missing");
+    statusEl.innerHTML = 'Fetching data...';
+    try {
+      const resp = await fetch(SHEET_URL + '&_=' + Date.now());
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      const parsed = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: h => h.trim().replace(/^"|"$/g, ''),
+        transform: v => v.trim().replace(/^"|"$/g, '')
+      });
+      records = parsed.data.filter(r => r['Employee Name'] && r['Topic']);
+      statusEl.innerHTML = `Loaded ${records.length} records`;
+      updateLastUpdated();
+      return records;
+    } catch (err) {
+      console.error("Load error:", err);
+      statusEl.innerHTML = `<span class="text-danger">Error: ${err.message}</span>`;
+      return [];
+    }
+  }
+
+  function updateLastUpdated() {
+    const el = document.getElementById('lastUpdated');
+    if (el) el.textContent = `Last loaded: ${new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}`;
+  }
+
+  function parseTextDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const match = dateStr.match(/(\w{3})\s+(\d{1,2}),\s+(\d{4})/);
+    if (match) {
+      const [_, m, d, y] = match;
+      return new Date(y, months[m], d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      const m = parseInt(parts[0],10)-1, d = parseInt(parts[1],10), y = parseInt(parts[2],10);
+      if (y > 1900 && !isNaN(m) && !isNaN(d)) return new Date(y, m, d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    return dateStr || 'N/A';
+  }
+
+  function normalizeName(name) {
+    return name?.replace(/Perira/gi, 'Pereira')
+      .replace(/Silviera/gi, 'Silveira')
+      .replace(/[^\w\s]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ') || '';
+  }
+
+  function badge(r) {
+    const s = r?.['Status'] || '';
+    const daysStr = r?.['Days Remaining'] || '';
+    const days = parseInt(daysStr, 10);
+    let cls = 'bg-secondary', txt = s || '—';
+    if (s === 'Completed') { cls = 'badge-comp'; txt = 'Completed'; }
+    else if (s === 'Not Due') { cls = 'badge-due'; txt = 'Not Due' + (daysStr ? ` (${daysStr}d)` : ''); }
+    else if (s === 'Overdue') { cls = 'badge-over'; txt = 'Overdue' + (daysStr ? ` (${daysStr}d)` : ''); }
+    else if (s === 'Due Soon') { cls = 'badge-expiring'; txt = 'Due Soon' + (daysStr ? ` (${daysStr}d)` : ''); }
+    return `<span class="badge ${cls}">${txt}</span>`;
+  }
+
+  function daysLeftStyle(daysStr) {
+    if (!daysStr || daysStr === 'N/A') return '';
+    const days = parseInt(daysStr, 10);
+    if (isNaN(days)) return '';
+    if (days <= 0) return 'text-danger fw-bold';
+    if (days <= 30) return 'text-warning fw-bold';
+    return 'text-success';
+  }
+
+  async function buildData() {
+    console.log("buildData started");
+    records = await loadData();
+    if (!records.length) {
+      console.warn("No records - stopping render");
+      return;
+    }
+
+    topicMap = {};
+    employeeMap = {};
+    allOverdue = [];
+    let overdueCount = 0, overdueEmps = new Set();
+    const uniqueRoles = new Set();
+
+    records.forEach(r => {
+      let topic = r['Topic']?.trim();
+      if (topic === "Fall Protection Awareness") topic = "Fall Protection";
+      if (topic === "SpecialtyConfined Space") topic = "Confined Space";
+
+      const origName = r['Employee Name']?.trim();
+      const normName = normalizeName(origName);
+      const role = (r['Role'] || '').trim();
+
+      if (role) uniqueRoles.add(role);
+
+      if (!normName || !topic) return;
+
+      if (!employeeMap[normName]) employeeMap[normName] = { original: origName, role, records: {} };
+      employeeMap[normName].records[topic] = r;
+
+      if (!topicMap[topic]) topicMap[topic] = [];
+      topicMap[topic].push({ ...r, 'Employee Name': origName });
+
+      if (['Overdue', 'Due Soon'].includes(r['Status'])) {
+        overdueCount++;
+        overdueEmps.add(normName);
+        allOverdue.push({ employee: origName, topic, ...r });
+      }
+    });
+
+    Object.values(employeeMap).forEach(emp => {
+      Object.keys(TRAINING_RULES).forEach(t => {
+        if (isRequiredForRole(t, emp.role) && !emp.records[t]) {
+          overdueCount++;
+          overdueEmps.add(normalizeName(emp.original));
+          allOverdue.push({ employee: emp.original, topic: t, 'Days Remaining': 'N/A', Status: 'No Record' });
+        }
+      });
+    });
+
+    const overdueEl = document.getElementById('overdueCount');
+    const empsEl = document.getElementById('overdueEmps');
+    const bannerEl = document.getElementById('overdueBanner');
+    if (overdueEl) overdueEl.textContent = overdueCount;
+    if (empsEl) empsEl.textContent = overdueEmps.size;
+    if (bannerEl) bannerEl.classList.toggle('d-none', overdueCount === 0);
+
+    // Role filter
+    const roleSelect = document.getElementById('roleFilter');
+    if (roleSelect) {
+      const prev = roleSelect.value;
+      roleSelect.innerHTML = '<option value="">— All Roles —</option>';
+      [...uniqueRoles].sort().forEach(role => {
+        const opt = document.createElement('option');
+        opt.value = role.toLowerCase();
+        opt.textContent = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+        roleSelect.appendChild(opt);
+      });
+      if (prev) {
+        const lower = prev.toLowerCase();
+        const match = Array.from(roleSelect.options).find(o => o.value === lower);
+        if (match) roleSelect.value = match.value;
+      }
+    }
+
+    renderTopics(document.getElementById('topicSearch')?.value.trim() || '');
+    populateEmployeeDropdown();
+
+    console.log("buildData finished - employees:", Object.keys(employeeMap).length);
+  }
+
+  function renderTopics(filter = '') {
+    const el = document.getElementById('topicList');
+    if (!el) return;
+    el.innerHTML = '';
+    const topics = Object.keys(topicMap).sort();
+    topics.forEach(t => {
+      if (filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
+      const count = topicMap[t].length;
+      const item = document.createElement('a');
+      item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+      item.innerHTML = `<span>${t}</span> <span class="badge bg-primary rounded-pill">${count}</span>`;
+      item.onclick = () => showTopicDetail(t);
+      el.appendChild(item);
+    });
+  }
+
+  document.getElementById('topicSearch')?.addEventListener('input', e => renderTopics(e.target.value.trim()));
+
+  document.getElementById('roleFilter')?.addEventListener('change', () => {
+    populateEmployeeDropdown();
   });
+
+  function populateEmployeeDropdown() {
+    const sel = document.getElementById('employeeSelect');
+    const roleEl = document.getElementById('roleFilter');
+    if (!sel || !roleEl) return console.error("Dropdowns missing");
+
+    const selectedRole = roleEl.value.trim().toLowerCase();
+    sel.innerHTML = '<option value="">— Jump to employee —</option>';
+
+    const filtered = Object.keys(employeeMap)
+      .filter(norm => {
+        const empRole = (employeeMap[norm].role || '').trim().toLowerCase();
+        return !selectedRole || empRole === selectedRole;
+      })
+      .sort((a,b) => employeeMap[a].original.localeCompare(employeeMap[b].original));
+
+    filtered.forEach(norm => {
+      const opt = document.createElement('option');
+      opt.value = norm;
+      opt.textContent = employeeMap[norm].original;
+      sel.appendChild(opt);
+    });
+
+    if (filtered.length === 0 && selectedRole) {
+      const opt = document.createElement('option');
+      opt.disabled = true;
+      opt.textContent = `(No employees for this role)`;
+      sel.appendChild(opt);
+    }
+
+    sel.onchange = e => { if (e.target.value) showEmployeeDetail(e.target.value); };
+  }
+
+  // Paste your remaining functions here (showTopicDetail, showEmployeeDetail, showAllOverdue, exportPDF, openOutlookEmail)
+  // For brevity, assuming they are already defined in your file - just ensure they are before this block
+
+  // Start the app
+  buildData();
+
+  // Dark mode toggle
+  document.getElementById('darkModeToggle')?.addEventListener('change', e => {
+    document.body.classList.toggle('dark', e.target.checked);
+    localStorage.setItem('darkMode', e.target.checked ? 'true' : 'false');
+  });
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.getElementById('darkModeToggle').checked = true;
+    document.body.classList.add('dark');
+  }
 
   setInterval(buildData, 900000);
 });
