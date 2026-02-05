@@ -80,7 +80,7 @@
 </div>
 
 <script>
-// CORRECT CSV URL (this one returns plain CSV)
+// YOUR CORRECT CSV URL
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRV7v_0mQWcqJI9ExD7lphRQDaHnyv65Tp_i2uDiBJOcxAJ5l6jXV1-WFFBKSU9YZErgLDkGB6nYmug/pub?output=csv';
 
 const RECIPIENT_EMAIL = 'your-team@company.com'; // ← CHANGE TO REAL EMAIL
@@ -143,7 +143,7 @@ const ALL_TRAININGS = [
   "Wildfire Smoke Protection"
 ];
 
-// REQUIRED TRAININGS
+// REQUIRED TRAININGS – using canonical names
 const REQUIRED_TRAININGS = [
   "Fall Protection",
   "Hazard Communication (HazCom/GHS)",
@@ -318,7 +318,9 @@ async function buildData() {
 
   records.forEach(r => {
     let topic = r['Topic'];
+    // Normalize variations
     if (topic === "Fall Protection Awareness") topic = "Fall Protection";
+    if (topic === "Wildfire Protection") topic = "Wildfire Smoke Prevention";
 
     const orig = r['Employee Name'];
     const status = r['Status'] || '';
