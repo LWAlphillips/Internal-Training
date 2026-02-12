@@ -168,7 +168,7 @@ async function loadData() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// DATE PARSER (fixed for MM/DD/YYYY format in your sheet)
+// DATE PARSER
 // ──────────────────────────────────────────────────────────────────────────────
 function parseTextDate(dateStr) {
   if (!dateStr || dateStr.trim() === '') return 'N/A';
@@ -187,7 +187,7 @@ function parseTextDate(dateStr) {
     }
   }
 
-  // Fallback: written month (e.g. "February 10, 2026")
+  // Fallback: written month
   const match = dateStr.match(/([A-Za-z]+)\s+(\d{1,2})[,\s]+(\d{4})/i);
   if (match) {
     const [_, monthStr, day, year] = match;
@@ -202,7 +202,6 @@ function parseTextDate(dateStr) {
     }
   }
 
-  // If parsing fails, return original string for visibility/debugging
   return dateStr.trim();
 }
 
@@ -308,7 +307,7 @@ LWA Training Tracker`;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// CORE BUILD LOGIC
+// CORE BUILD LOGIC — ONLY ACTIVE EMPLOYEES
 // ──────────────────────────────────────────────────────────────────────────────
 async function buildData() {
   records = await loadData();
@@ -320,8 +319,10 @@ async function buildData() {
   allOverdue = [];
   let overdueCount = 0, overdueEmps = new Set();
 
-  // Process existing records
+  // Process existing records — only Active employees
   records.forEach(r => {
+    if (r['Active/Inactive EE'] !== 'Active') return;  // ← FILTER HERE
+
     let topic = r['Topic'];
     if (topic === "Fall Protection Awareness") topic = "Fall Protection";
     const orig = r['Employee Name'];
@@ -350,7 +351,7 @@ async function buildData() {
     }
   });
 
-  // Add missing REQUIRED trainings as overdue (only for employees who exist)
+  // Add missing REQUIRED trainings as overdue — only for Active employees
   Object.values(employeeMap).forEach(emp => {
     REQUIRED_TRAININGS.forEach(topic => {
       if (!emp.records[topic]) {
