@@ -10,12 +10,40 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
-    /* your styles here - keep as is */
+    body { background:#f4f6f9; font-family:system-ui; transition:all .3s; }
+    body.dark { background:#121212; color:#e0e0e0; }
+    body.dark .card { background:#1e1e1e; color:#e0e0e0; border:1px solid #333; }
+    body.dark table th { background:#343a40; color:#fff; }
+    body.dark .table { color:#e0e0e0; }
+    body.dark .table-hover tbody tr:hover { background:#2c2c2c; }
+    body.dark .list-group-item { background:#2c2c2c!important; color:#e0e0e0!important; border-color:#444!important; }
+    body.dark .list-group-item:hover { background:#3a3a3a!important; }
+    .card { box-shadow:0 4px 12px rgba(0,0,0,.07); border:none; border-radius:12px; }
+    .badge-due { background:#28a745; color:#fff; }
+    .badge-over { background:#dc3545; color:#fff; }
+    .badge-comp { background:#6c757d; color:#fff; }
+    .badge-notify { background:#ffc107; color:#000; }
+    .badge-norecord { background:#6c757d; color:#fff; }
+    .list-group-item:hover { background:#e9ecef; cursor:pointer; }
+    table th { background:#343a40; color:#fff; }
+    .overdue-banner { background:#dc3545; color:#fff; padding:10px; border-radius:8px; margin-bottom:20px; }
+    body.dark .overdue-banner { background:#bb2d3b; }
+    .controls-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center; }
+    .control-input { width:240px!important; max-width:100%; }
+    .refresh-btn { white-space:nowrap; }
+    .section-header { background:#e9ecef; font-weight:bold; padding:8px 12px; border-radius:8px; margin:20px 0 10px; }
+    body.dark .section-header { background:#2c2c2c; }
+    @media(max-width:991px){
+      .order-mobile-1 { order:1; }
+      .order-mobile-2 { order:2; }
+      #topicList { max-height:50vh; }
+    }
+    .schedule-training { color:inherit; font-weight:500; }
+    body.dark .schedule-training { color:#ccc; }
   </style>
 </head>
 <body class="p-3">
 <div class="container-fluid">
-  <!-- your HTML structure here - keep as is -->
   <div id="overdueBanner" class="overdue-banner d-none">
     <strong>Overdue Alert:</strong> <span id="overdueCount"></span> trainings overdue for <span id="overdueEmps"></span> employees.
   </div>
@@ -55,7 +83,7 @@
 <script>
 // CONFIG
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRV7v_0mQWcqJI9ExD7lphRQDaHnyv65Tp_i2uDiBJOcxAJ5l6jXV1-WFFBKSU9YZErgLDkGB6nYmug/pub?output=csv';
-const RECIPIENT_EMAIL = 'your-team@company.com'; // CHANGE THIS
+const RECIPIENT_EMAIL = 'your-team@company.com'; // ← CHANGE THIS
 
 const LINKS = {
   "Fall Protection Awareness": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
@@ -66,7 +94,56 @@ const LINKS = {
   "Workplace Violence Prevention": "https://www.surveymonkey.com/r/LWAWVPP"
 };
 
-// TRAINING MATRIX - from your paste
+// Full list of topics from your sheet
+const ALL_TRAININGS = [
+  "40-Hour Hazwoper",
+  "Air Products- Martinez Safety Indoct",
+  "Andeaver Martinez Site Orientation",
+  "Certified General Electrician",
+  "Certified Rigger and Signaler",
+  "Chemical Hazard Safety",
+  "Confined Space",
+  "CRIS Certificate",
+  "Electrical Safety Awareness",
+  "Employee Orientation / Code of Safe Practice Review",
+  "Fall Protection Awareness",
+  "Fire Prevention and Extinguishers",
+  "First Aid/CPR/AED",
+  "Forklift Training",
+  "Hazard Communication (HazCom/GHS)",
+  "Heat Illness Prevention",
+  "Indoor Heat Illness Prevention",
+  "Intro to First Aid",
+  "LOTO",
+  "Machine Safe Guarding",
+  "MEWP Fall Protection",
+  "Mobile Elevated Work Platform",
+  "NCCO Crane Operations",
+  "Northern California RSO",
+  "OSCA Card",
+  "OSHA 10 Certificate",
+  "OSHA 30 Certificate",
+  "OSHA 500 Certificate",
+  "OSHA 510 Certificate",
+  "Part 46 New Miner",
+  "Part 46 Refresher",
+  "Part 48 New Miner",
+  "Part 48 Refresher",
+  "Personal Protective Equipment",
+  "PG&E SAFE 0101 Training",
+  "Respiratory Fit Testing",
+  "Respiratory Medical Questionnare",
+  "Scaffolding Awareness",
+  "Shell Martinez Site Specific",
+  "Silica Awareness Training",
+  "Silica Dust Exposure",
+  "Tesoro Martinez CA Site Specific",
+  "Valley Fever Awareness",
+  "Wildfire Smoke Prevention",
+  "Workplace Violence Prevention"
+];
+
+// TRAINING MATRIX from your "Training Topics" paste
 const TRAINING_MATRIX = {
   "Foreman": {
     "Required": [
@@ -117,13 +194,14 @@ const TRAINING_MATRIX = {
   }
 };
 
+// Helper to get categories
 function getCategoriesForPosition(position) {
   const cats = TRAINING_MATRIX[position] || { Required: [], Suggested: [], Additional: [], "Site Specific": [] };
   cats.SiteSpecific = cats["Site Specific"] || [];
   return cats;
 }
 
-// STATE
+// STATE VARIABLES
 let records = [], topicMap = {}, employeeMap = {}, allTopics = new Set();
 let allOverdue = [];
 
@@ -134,6 +212,7 @@ async function loadData() {
     const resp = await fetch(SHEET_URL + '&_=' + Date.now());
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const text = await resp.text();
+    console.log('CSV fetched, length:', text.length); // debug
 
     const results = Papa.parse(text, {
       header: true,
@@ -149,10 +228,11 @@ async function loadData() {
       });
 
     document.getElementById('status').innerHTML = `Loaded <strong>${records.length}</strong> records`;
+    console.log('Records loaded:', records.length); // debug
     return records;
   } catch (err) {
     document.getElementById('status').innerHTML = `<span class="text-danger">Error: ${err.message}</span>`;
-    console.error(err);
+    console.error('Data load error:', err);
     return [];
   }
 }
@@ -184,7 +264,7 @@ function parseTextDate(dateStr) {
   return dateStr.trim();
 }
 
-// UTILITIES
+// NORMALIZE NAME
 function normalizeName(name) {
   return name?.replace(/Perira/gi, 'Pereira')
     .replace(/Silviera/gi, 'Silveira')
@@ -194,6 +274,7 @@ function normalizeName(name) {
     .replace(/\s+/g, ' ') || '';
 }
 
+// BADGE
 function badge(r) {
   const s = r['Status'] || '';
   const days = r['Days Remaining'] || '';
@@ -204,12 +285,12 @@ function badge(r) {
   return `<span class="badge bg-secondary">${s || '—'}</span>`;
 }
 
-// PDF EXPORT (simplified version - keep yours if customized)
+// PDF EXPORT (placeholder - replace with your full version)
 async function exportPDF() {
-  alert('PDF export not fully implemented in this version');
+  alert('PDF export coming soon - click an employee or topic first');
 }
 
-// EMAIL GENERATOR
+// EMAIL
 function openOutlookEmail(normName) {
   const emp = employeeMap[normName];
   if (!emp) return;
@@ -224,7 +305,9 @@ function openOutlookEmail(normName) {
     const r = emp.records[topic];
     const link = LINKS[topic] || 'Schedule Training';
     if (r && r['Status'] === 'Overdue') {
-      actionItems.push(`• ${topic} (REQUIRED/Site Specific)\n Status: Overdue\n Link: ${link}`);
+      const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
+      const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
+      actionItems.push(`• ${topic} (REQUIRED/Site Specific)\n (Training: ${trainDate} | Expires: ${exp})\n Status: Overdue\n Link: ${link}`);
     } else if (!r) {
       actionItems.push(`• ${topic} (REQUIRED/Site Specific)\n Status: No Record / Missing\n Link: ${link}`);
     }
@@ -233,18 +316,22 @@ function openOutlookEmail(normName) {
     const r = emp.records[topic];
     if (r && r['Status'] === 'Overdue') {
       const link = LINKS[topic] || 'Schedule Training';
-      actionItems.push(`• ${topic} (Suggested)\n Status: Overdue\n Link: ${link}`);
+      const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
+      const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
+      actionItems.push(`• ${topic} (Suggested)\n (Training: ${trainDate} | Expires: ${exp})\n Status: Overdue\n Link: ${link}`);
     }
   });
   const count = actionItems.length;
   const body = `Hi ${firstName} (${position}),
 You have ${count} training${count !== 1 ? 's' : ''} needing attention:
 ${actionItems.join('\n\n') || '• None'}
-Please complete as soon as possible.`;
+Please complete as soon as possible.
+Generated: ${new Date().toLocaleString()}
+LWA Training Tracker`;
   location.href = `mailto:${RECIPIENT_EMAIL}?subject=Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
 }
 
-// CORE BUILD LOGIC
+// BUILD DATA
 async function buildData() {
   records = await loadData();
   if (!records.length) return;
@@ -275,7 +362,7 @@ async function buildData() {
     if (status === 'Overdue') {
       overdueCount++;
       overdueEmps.add(norm);
-      allOverdue.push({ employee: orig, topic, daysRemaining: r['Days Remaining'] });
+      allOverdue.push({ employee: orig, topic });
     }
   });
 
@@ -288,6 +375,7 @@ async function buildData() {
   populateEmployeeDropdown();
 }
 
+// RENDER TOPICS
 function renderTopics(filter = '') {
   const el = document.getElementById('topicList');
   el.innerHTML = '';
@@ -304,6 +392,7 @@ function renderTopics(filter = '') {
 
 document.getElementById('topicSearch').addEventListener('input', e => renderTopics(e.target.value.trim()));
 
+// POPULATE EMPLOYEE DROPDOWN
 function populateEmployeeDropdown() {
   const sel = document.getElementById('employeeSelect');
   sel.innerHTML = '<option value="">— Jump to employee —</option>';
@@ -318,6 +407,7 @@ function populateEmployeeDropdown() {
   sel.onchange = e => e.target.value && showEmployeeDetail(e.target.value);
 }
 
+// SHOW TOPIC DETAIL
 function showTopicDetail(topic) {
   const recs = topicMap[topic] || [];
   let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${topic}</h4></div><p class="text-muted">${recs.length} record(s)</p><div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Employee</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
@@ -330,6 +420,7 @@ function showTopicDetail(topic) {
   document.getElementById('detailPane').innerHTML = html;
 }
 
+// SHOW EMPLOYEE DETAIL
 function showEmployeeDetail(norm) {
   const emp = employeeMap[norm];
   if (!emp) return;
@@ -337,8 +428,8 @@ function showEmployeeDetail(norm) {
   const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'Unknown';
   const cats = getCategoriesForPosition(position);
   const over = Object.entries(emp.records).filter(([,r]) => r['Status'] === 'Overdue').length;
-  let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${name}</h4><div><button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button></div></div>`;
-  html += `<p class="text-muted mb-1">Position: <strong>${position}</strong> | Overdues: ${over}</p><div class="table-responsive">`;
+  let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${name}</h4><div><button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button><button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button></div></div>`;
+  html += `<p class="text-muted mb-1">Position: <strong>${position}</strong> | Trainings grouped by category | Overdues: ${over}</p><div class="table-responsive">`;
   const addSection = (title, topics) => {
     if (topics.length === 0) return;
     html += `<div class="section-header">${title}</div><table class="table table-sm table-hover"><thead><tr><th>Topic</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
@@ -365,8 +456,9 @@ function showEmployeeDetail(norm) {
   document.getElementById('detailPane').innerHTML = html;
 }
 
+// SHOW ALL OVERDUE (placeholder)
 function showAllOverdue() {
-  document.getElementById('detailPane').innerHTML = `<div class="card-body text-center py-5"><p class="fs-4">View All Overdue - not implemented in this version</p></div>`;
+  document.getElementById('detailPane').innerHTML = `<div class="card-body text-center py-5"><p class="fs-4 text-success">All Overdue view - coming soon!</p></div>`;
 }
 
 // DARK MODE
@@ -380,7 +472,7 @@ if (localStorage.getItem('darkMode') === 'true') {
   document.body.classList.add('dark');
 }
 
-// START THE APP
+// START
 buildData();
 setInterval(buildData, 600000);
 </script>
