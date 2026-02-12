@@ -81,14 +81,12 @@
 </div>
 
 <script>
-// ──────────────────────────────────────────────────────────────────────────────
 // CONFIG
-// ──────────────────────────────────────────────────────────────────────────────
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRV7v_0mQWcqJI9ExD7lphRQDaHnyv65Tp_i2uDiBJOcxAJ5l6jXV1-WFFBKSU9YZErgLDkGB6nYmug/pub?output=csv';
 const RECIPIENT_EMAIL = 'your-team@company.com'; // ← CHANGE TO REAL EMAIL
 
 const LINKS = {
-  "Fall Protection": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
+  "Fall Protection Awareness": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
   "Hazard Communication (HazCom/GHS)": "https://www.surveymonkey.com/r/LWAHazCom",
   "Indoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAIndoorHeatIllness",
   "Outdoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAHeatIllnessQuiz",
@@ -96,78 +94,88 @@ const LINKS = {
   "Workplace Violence Prevention": "https://www.surveymonkey.com/r/LWAWVPP"
 };
 
+// Exact topics from your sheet
 const ALL_TRAININGS = [
-  "40-Hour Hazwoper", "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation",
-  "CRIS Certificate", "Certified General Electrician", "Certified Rigger and Signaler",
-  "Chemical Hazard Safety", "Confined Space", "Electrical Safety Awareness",
-  "Fall Protection", "Fall Protection Awareness", "Fire Prevention and Extinguishers",
-  "First Aid/CPR/AED", "Forklift Training", "Hazard Communication (HazCom/GHS)",
-  "Heat Illness Prevention (Indoor)", "Heat Illness Prevention (Outdoor)", "Intro to First Aid",
-  "LOTO", "MEWP Fall Protection", "Machine Safe Guarding", "Mobile Elevated Work Platform",
-  "NCCO Crane Operations", "Northern California RSO", "OSCA Card",
-  "OSHA 10 Certificate", "OSHA 30 Certificate", "OSHA 500 Certificate", "OSHA 510 Certificate",
-  "PG&E SAFE 0101 Training", "Part 46 New Miner", "Part 46 Refresher",
-  "Part 48 New Miner", "Part 48 Refresher", "Personal Protective Equipment",
-  "Respiratory Fit Testing", "Respiratory Medical Questionnare", "Shell Martinez Site Specific",
-  "Silica Awareness Training", "Tesoro Martinez CA Site Specific", "Valley Fever Awareness",
-  "Workplace Violence Prevention", "Harassment & Discrimination Training",
-  "Workplace Violence Property Assessment", "Wildfire Smoke Protection"
+  "Certified Rigger and Signaler",
+  "Confined Space",
+  "Employee Orientation / Code of Safe Practice Review",
+  "Fall Protection Awareness",
+  "Fire Prevention and Extinguishers",
+  "First Aid/CPR/AED",
+  "Forklift Training",
+  "Hazard Communication (HazCom/GHS)",
+  "Heat Illness Prevention",
+  "Indoor Heat Illness Prevention",
+  "Intro to First Aid",
+  "Mobile Elevated Work Platform",
+  "NCCO Crane Operations",
+  "OSHA 30 Certificate",
+  "Outdoor Heat Illness Prevention",
+  "Part 46 New Miner",
+  "Part 46 Refresher",
+  "Personal Protective Equipment",
+  "Respiratory Fit Testing",
+  "Respiratory Medical Questionnare",
+  "Scaffolding Awareness",
+  "Silica Awareness Training",
+  "Silica Dust Exposure",
+  "Wildfire Smoke Prevention",
+  "Workplace Violence Prevention"
 ];
 
-const REQUIRED_TRAININGS = [
-  "Fall Protection", "Hazard Communication (HazCom/GHS)",
-  "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention",
-  "Wildfire Smoke Protection", "Workplace Violence Prevention"
-];
-
-const SUGGESTED_TRAININGS = [
-  "Confined Space", "Forklift Training", "Mobile Elevated Work Platform",
-  "First Aid/CPR/AED", "Harassment & Discrimination Training",
-  "Workplace Violence Property Assessment"
-];
-
-// ──────────────────────────────────────────────────────────────────────────────
-// ADVANCED: Position-specific required trainings
-// Customize this object based on your "Training Topics" sheet rules
-// If a position is not listed, falls back to global REQUIRED_TRAININGS
-// ──────────────────────────────────────────────────────────────────────────────
+// Position-specific required trainings (based on sheet patterns)
 const POSITION_REQUIREMENTS = {
-  "Worker": [
-    "Fall Protection",
+  "Crew": [
+    "Fall Protection Awareness",
     "Hazard Communication (HazCom/GHS)",
-    "Forklift Training",
-    "Outdoor Heat Illness Prevention",
-    "Workplace Violence Prevention"
-  ],
-  "Foreman": [
-    "Fall Protection",
-    "Hazard Communication (HazCom/GHS)",
-    "Confined Space",
-    "Mobile Elevated Work Platform",
     "Indoor Heat Illness Prevention",
     "Outdoor Heat Illness Prevention",
+    "Wildfire Smoke Prevention",
     "Workplace Violence Prevention",
-    "First Aid/CPR/AED"
+    "Forklift Training",
+    "Mobile Elevated Work Platform",
+    "Confined Space",
+    "Part 46 New Miner",
+    "Part 46 Refresher",
+    "Personal Protective Equipment"
+  ],
+  "Foreman": [
+    "Fall Protection Awareness",
+    "Hazard Communication (HazCom/GHS)",
+    "Indoor Heat Illness Prevention",
+    "Outdoor Heat Illness Prevention",
+    "Wildfire Smoke Prevention",
+    "Workplace Violence Prevention",
+    "Forklift Training",
+    "Mobile Elevated Work Platform",
+    "Confined Space",
+    "Certified Rigger and Signaler",
+    "OSHA 30 Certificate",
+    "First Aid/CPR/AED",
+    "NCCO Crane Operations"
   ],
   "Office": [
     "Hazard Communication (HazCom/GHS)",
     "Workplace Violence Prevention",
-    "Harassment & Discrimination Training"
-  ],
-  // Add more positions as needed, e.g.:
-  // "Manager": [...],
-  // "default": REQUIRED_TRAININGS  // uncomment if you want explicit default
+    "Indoor Heat Illness Prevention"
+  ]
 };
 
-// ──────────────────────────────────────────────────────────────────────────────
+// Suggested trainings (only ones that appear or make sense)
+const SUGGESTED_TRAININGS = [
+  "Confined Space",
+  "Forklift Training",
+  "Mobile Elevated Work Platform",
+  "First Aid/CPR/AED",
+  "Scaffolding Awareness",
+  "Silica Awareness Training"
+];
+
 // STATE
-// ──────────────────────────────────────────────────────────────────────────────
 let records = [], topicMap = {}, employeeMap = {}, allTopics = new Set();
 let allOverdue = [];
 
-// ──────────────────────────────────────────────────────────────────────────────
 // DATA LOADING
-// ──────────────────────────────────────────────────────────────────────────────
 async function loadData() {
   document.getElementById('status').innerHTML = 'Fetching data...';
   try {
@@ -184,9 +192,7 @@ async function loadData() {
     records = results.data
       .filter(r => r['Employee Name']?.trim() && r['Topic']?.trim())
       .map(r => {
-        Object.keys(r).forEach(k => {
-          r[k] = (r[k] || '').trim().replace(/^"|"$/g, '');
-        });
+        Object.keys(r).forEach(k => r[k] = (r[k] || '').trim().replace(/^"|"$/g, ''));
         return r;
       });
 
@@ -199,12 +205,9 @@ async function loadData() {
   }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
 // DATE PARSER
-// ──────────────────────────────────────────────────────────────────────────────
 function parseTextDate(dateStr) {
   if (!dateStr || dateStr.trim() === '') return 'N/A';
-
   const slashParts = dateStr.split('/');
   if (slashParts.length === 3) {
     const [m, d, y] = slashParts.map(p => parseInt(p.trim(), 10));
@@ -217,7 +220,6 @@ function parseTextDate(dateStr) {
       }
     }
   }
-
   const match = dateStr.match(/([A-Za-z]+)\s+(\d{1,2})[,\s]+(\d{4})/i);
   if (match) {
     const [_, monthStr, day, year] = match;
@@ -226,18 +228,13 @@ function parseTextDate(dateStr) {
     const month = months[monthKey];
     if (month !== undefined) {
       const date = new Date(parseInt(year, 10), month, parseInt(day, 10));
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-      }
+      if (!isNaN(date.getTime())) return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
   }
-
   return dateStr.trim();
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
 // UTILITIES
-// ──────────────────────────────────────────────────────────────────────────────
 function normalizeName(name) {
   return name?.replace(/Perira/gi, 'Pereira')
     .replace(/Silviera/gi, 'Silveira')
@@ -257,9 +254,7 @@ function badge(r) {
   return `<span class="badge bg-secondary">${s || '—'}</span>`;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
 // PDF EXPORT
-// ──────────────────────────────────────────────────────────────────────────────
 async function exportPDF() {
   await new Promise(r => setTimeout(r, 1000));
   try {
@@ -269,9 +264,7 @@ async function exportPDF() {
     clone.querySelectorAll('td:first-child').forEach(td => {
       const topic = td.textContent.trim();
       const link = LINKS[topic];
-      if (link) {
-        td.innerHTML = `<a href="${link}" style="color:#007bff; text-decoration:underline;">${topic}</a>`;
-      }
+      if (link) td.innerHTML = `<a href="${link}" style="color:#007bff; text-decoration:underline;">${topic}</a>`;
     });
     clone.style.padding = '20px';
     clone.style.background = '#fff';
@@ -297,18 +290,14 @@ async function exportPDF() {
   }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// EMAIL GENERATOR (with optional Position inclusion)
-// ──────────────────────────────────────────────────────────────────────────────
+// EMAIL GENERATOR
 function openOutlookEmail(normName) {
   const emp = employeeMap[normName];
   if (!emp) return;
   const fullName = emp.original;
   const firstName = fullName.split(' ')[0];
   const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'N/A';
-
-  // Get position-specific required trainings (or fallback)
-  const requiredList = POSITION_REQUIREMENTS[position] || REQUIRED_TRAININGS;
+  const requiredList = POSITION_REQUIREMENTS[position] || [];
 
   const actionItems = [];
   requiredList.forEach(topic => {
@@ -332,10 +321,7 @@ function openOutlookEmail(normName) {
     }
   });
   const count = actionItems.length;
-  let body = `Hi ${firstName}`;
-  // Optional: include position in greeting
-  // body += ` (${position})`;
-  body += `,
+  const body = `Hi ${firstName} (${position}),
 You have ${count} training${count !== 1 ? 's' : ''} needing attention:
 ${actionItems.join('\n\n') || '• None'}
 Please complete as soon as possible.
@@ -344,9 +330,7 @@ LWA Training Tracker`;
   location.href = `mailto:${RECIPIENT_EMAIL}?subject=Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// CORE BUILD LOGIC — ONLY ACTIVE EMPLOYEES
-// ──────────────────────────────────────────────────────────────────────────────
+// CORE BUILD LOGIC — ACTIVE EMPLOYEES ONLY
 async function buildData() {
   records = await loadData();
   if (!records.length) return;
@@ -361,7 +345,6 @@ async function buildData() {
     if (r['Active/Inactive EE'] !== 'Active') return;
 
     let topic = r['Topic'];
-    if (topic === "Fall Protection Awareness") topic = "Fall Protection";
     const orig = r['Employee Name'];
     const status = r['Status'] || '';
     const norm = normalizeName(orig);
@@ -388,6 +371,7 @@ async function buildData() {
     }
   });
 
+  // Add missing required as overdue (using global list for banner; detail uses position-specific)
   Object.values(employeeMap).forEach(emp => {
     REQUIRED_TRAININGS.forEach(topic => {
       if (!emp.records[topic]) {
@@ -422,25 +406,11 @@ function showAllOverdue() {
     <h3 class="text-center mb-4 fw-bold text-danger">All Overdue Trainings (${allOverdue.length})</h3>
     <div class="table-responsive">
       <table class="table table-hover">
-        <thead>
-          <tr>
-            <th>Employee</th>
-            <th>Topic</th>
-            <th>Training Date</th>
-            <th>Expires</th>
-            <th>Days Overdue</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Employee</th><th>Topic</th><th>Training Date</th><th>Expires</th><th>Days Overdue</th></tr></thead>
         <tbody>`;
   allOverdue.sort((a,b) => a.employee.localeCompare(b.employee) || a.topic.localeCompare(b.topic)).forEach(item => {
     const days = item.daysRemaining === 'N/A' ? 'Missing' : Math.abs(item.daysRemaining);
-    html += `<tr>
-      <td>${item.employee}</td>
-      <td>${item.topic}</td>
-      <td>${parseTextDate(item.trainingDate)}</td>
-      <td>${parseTextDate(item.expirationDate)}</td>
-      <td class="text-danger fw-bold">${days}</td>
-    </tr>`;
+    html += `<tr><td>${item.employee}</td><td>${item.topic}</td><td>${parseTextDate(item.trainingDate)}</td><td>${parseTextDate(item.expirationDate)}</td><td class="text-danger fw-bold">${days}</td></tr>`;
   });
   html += `</tbody></table></div></div>`;
   document.getElementById('detailPane').innerHTML = html;
@@ -493,12 +463,10 @@ function showEmployeeDetail(norm) {
   if (!emp) return;
   const name = emp.original;
   const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'N/A';
-  // Use position-specific required trainings
-  const requiredList = POSITION_REQUIREMENTS[position] || REQUIRED_TRAININGS;
+  const requiredList = POSITION_REQUIREMENTS[position] || [];
   const over = Object.entries(emp.records).filter(([,r]) => r['Status'] === 'Overdue').length;
   let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${name}</h4><div><button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button><button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button></div></div>`;
-  html += `<p class="text-muted mb-1">Position: <strong>${position}</strong> | Trainings grouped by category | Overdues: ${over}</p>`;
-  html += `<div class="table-responsive">`;
+  html += `<p class="text-muted mb-1">Position: <strong>${position}</strong> | Trainings grouped by category | Overdues: ${over}</p><div class="table-responsive">`;
   const addSection = (title, topics) => {
     if (topics.length === 0) return;
     html += `<div class="section-header">${title}</div><table class="table table-sm table-hover"><thead><tr><th>Topic</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
@@ -520,9 +488,7 @@ function showEmployeeDetail(norm) {
   document.getElementById('detailPane').innerHTML = html;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
 // DARK MODE & INIT
-// ──────────────────────────────────────────────────────────────────────────────
 document.getElementById('darkModeToggle').addEventListener('change', e => {
   document.body.classList.toggle('dark', e.target.checked);
   localStorage.setItem('darkMode', e.target.checked);
