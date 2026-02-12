@@ -1,85 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>LWA Training Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <style>
-    body { background:#f4f6f9; font-family:system-ui; transition:all .3s; }
-    body.dark { background:#121212; color:#e0e0e0; }
-    body.dark .card { background:#1e1e1e; color:#e0e0e0; border:1px solid #333; }
-    body.dark table th { background:#343a40; color:#fff; }
-    body.dark .table { color:#e0e0e0; }
-    body.dark .table-hover tbody tr:hover { background:#2c2c2c; }
-    body.dark .list-group-item { background:#2c2c2c!important; color:#e0e0e0!important; border-color:#444!important; }
-    body.dark .list-group-item:hover { background:#3a3a3a!important; }
-    .card { box-shadow:0 4px 12px rgba(0,0,0,.07); border:none; border-radius:12px; }
-    .badge-due { background:#28a745; color:#fff; }
-    .badge-over { background:#dc3545; color:#fff; }
-    .badge-comp { background:#6c757d; color:#fff; }
-    .badge-notify { background:#ffc107; color:#000; }
-    .badge-norecord { background:#6c757d; color:#fff; }
-    .list-group-item:hover { background:#e9ecef; cursor:pointer; }
-    table th { background:#343a40; color:#fff; }
-    .overdue-banner { background:#dc3545; color:#fff; padding:10px; border-radius:8px; margin-bottom:20px; }
-    body.dark .overdue-banner { background:#bb2d3b; }
-    .controls-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center; }
-    .control-input { width:240px!important; max-width:100%; }
-    .refresh-btn { white-space:nowrap; }
-    .section-header { background:#e9ecef; font-weight:bold; padding:8px 12px; border-radius:8px; margin:20px 0 10px; }
-    body.dark .section-header { background:#2c2c2c; }
-    @media(max-width:991px){
-      .order-mobile-1 { order:1; }
-      .order-mobile-2 { order:2; }
-      #topicList { max-height:50vh; }
-    }
-    .schedule-training { color:inherit; font-weight:500; }
-    body.dark .schedule-training { color:#ccc; }
-  </style>
-</head>
-<body class="p-3">
-<div class="container-fluid">
-  <div id="overdueBanner" class="overdue-banner d-none">
-    <strong>Overdue Alert:</strong> <span id="overdueCount"></span> trainings overdue for <span id="overdueEmps"></span> employees.
-  </div>
-  <div class="card mb-4"><div class="card-body text-center py-4">
-    <h1 class="display-5 fw-bold text-primary">LWA Training Tracker</h1>
-    <div class="status-bar text-muted" id="status">Loading...</div>
-    <div class="controls-row mt-3">
-      <input type="text" id="topicSearch" class="form-control form-control-sm control-input" placeholder="Search topics…">
-      <select id="employeeSelect" class="form-select form-select-sm control-input"><option value="">— Jump to employee —</option></select>
-      <button class="btn btn-outline-primary btn-sm refresh-btn" onclick="buildData()">Refresh</button>
-      <button class="btn btn-outline-danger btn-sm" onclick="showAllOverdue()">View All Overdue</button>
-      <div class="form-check form-switch ms-2">
-        <input class="form-check-input" type="checkbox" id="darkModeToggle">
-        <label class="form-check-label text-muted small" for="darkModeToggle">Dark</label>
-      </div>
-    </div>
-  </div></div>
-  <div class="row">
-    <div class="col-lg-8 order-mobile-1 mb-4">
-      <div id="detailPane" class="card h-100">
-        <div class="card-body d-flex align-items-center justify-content-center text-muted">
-          <p class="mb-0 fs-5">Click a topic or employee</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg-4 order-mobile-2 mb-4">
-      <div class="card h-100">
-        <div class="card-header bg-primary text-white"><strong>Training Topics</strong></div>
-        <div class="card-body p-0">
-          <div id="topicList" class="list-group list-group-flush" style="max-height:70vh;overflow-y:auto"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
 // CONFIG
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRV7v_0mQWcqJI9ExD7lphRQDaHnyv65Tp_i2uDiBJOcxAJ5l6jXV1-WFFBKSU9YZErgLDkGB6nYmug/pub?output=csv';
@@ -94,153 +12,66 @@ const LINKS = {
   "Workplace Violence Prevention": "https://www.surveymonkey.com/r/LWAWVPP"
 };
 
-// Matrix from "Training Topics" sheet (embedded as object)
+// Matrix from your pasted "Training Topics" data
 const TRAINING_MATRIX = {
   "Foreman": {
     "Required": [
-      "Chemical Hazard Safety",
-      "Electrical Safety Awareness",
-      "Employee Orientation / Code of Safe Practice Review",
-      "Fall Protection Awareness",
-      "Fire Prevention and Extinguishers",
-      "First Aid/CPR/AED",
-      "Forklift Training",
-      "Hazard Communication (HazCom/GHS)",
-      "Indoor Heat Illness Prevention",
-      "Outdoor Heat Illness Prevention",
-      "Intro to First Aid",
-      "Machine Safe Guarding",
-      "MEWP Fall Protection",
-      "Mobile Elevated Work Platform",
-      "OSHA 10 Certificate",
-      "Personal Protective Equipment",
-      "Silica Awareness Training",
-      "Valley Fever Awareness",
-      "Wildfire Smoke Prevention",
-      "Workplace Violence Prevention"
+      "Chemical Hazard Safety", "Electrical Safety Awareness", "Employee Orientation / Code of Safe Practice Review",
+      "Fall Protection Awareness", "Fire Prevention and Extinguishers", "First Aid/CPR/AED", "Forklift Training",
+      "Hazard Communication (HazCom/GHS)", "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention",
+      "Intro to First Aid", "Machine Safe Guarding", "MEWP Fall Protection", "Mobile Elevated Work Platform",
+      "OSHA 10 Certificate", "Personal Protective Equipment", "Silica Awareness Training", "Valley Fever Awareness",
+      "Wildfire Smoke Prevention", "Workplace Violence Prevention"
     ],
-    "Suggested": [
-      "Confined Space",
-      "LOTO",
-      "OSHA 30 Certificate"
-    ],
+    "Suggested": ["Confined Space", "LOTO", "OSHA 30 Certificate"],
     "Additional": [
-      "40-Hour Hazwoper",
-      "Certified General Electrician",
-      "Certified Rigger and Signaler",
-      "CRIS Certificate",
-      "NCCO Crane Operations",
-      "OSHA 500 Certificate",
-      "OSHA 510 Certificate",
-      "Part 46 New Miner",
-      "Part 46 Refresher",
-      "Part 48 New Miner",
-      "Part 48 Refresher"
+      "40-Hour Hazwoper", "Certified General Electrician", "Certified Rigger and Signaler", "CRIS Certificate",
+      "NCCO Crane Operations", "OSHA 500 Certificate", "OSHA 510 Certificate", "Part 46 New Miner", "Part 46 Refresher",
+      "Part 48 New Miner", "Part 48 Refresher"
     ],
     "Site Specific": [
-      "Air Products- Martinez Safety Indoct",
-      "Andeaver Martinez Site Orientation",
-      "Northern California RSO",
-      "OSCA Card",
-      "PG&E SAFE 0101 Training",
-      "Respiratory Fit Testing",
-      "Respiratory Medical Questionnare",
-      "Scaffolding Awareness",
-      "Shell Martinez Site Specific",
-      "Silica Dust Exposure",
-      "Tesoro Martinez CA Site Specific"
+      "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation", "Northern California RSO",
+      "OSCA Card", "PG&E SAFE 0101 Training", "Respiratory Fit Testing", "Respiratory Medical Questionnare",
+      "Scaffolding Awareness", "Shell Martinez Site Specific", "Silica Dust Exposure", "Tesoro Martinez CA Site Specific"
     ]
   },
   "Crew": {
     "Required": [
-      "Chemical Hazard Safety",
-      "Electrical Safety Awareness",
-      "Employee Orientation / Code of Safe Practice Review",
-      "Fall Protection Awareness",
-      "Fire Prevention and Extinguishers",
-      "Hazard Communication (HazCom/GHS)",
-      "Indoor Heat Illness Prevention",
-      "Outdoor Heat Illness Prevention",
-      "Intro to First Aid",
-      "OSHA 10 Certificate",
-      "Personal Protective Equipment",
-      "Silica Awareness Training",
-      "Valley Fever Awareness",
-      "Wildfire Smoke Prevention",
+      "Chemical Hazard Safety", "Electrical Safety Awareness", "Employee Orientation / Code of Safe Practice Review",
+      "Fall Protection Awareness", "Fire Prevention and Extinguishers", "Hazard Communication (HazCom/GHS)",
+      "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention", "Intro to First Aid", "OSHA 10 Certificate",
+      "Personal Protective Equipment", "Silica Awareness Training", "Valley Fever Awareness", "Wildfire Smoke Prevention",
       "Workplace Violence Prevention"
     ],
-    "Suggested": [
-      "Confined Space",
-      "Forklift Training",
-      "LOTO",
-      "Machine Safe Guarding",
-      "MEWP Fall Protection",
-      "Mobile Elevated Work Platform"
-    ],
+    "Suggested": ["Confined Space", "Forklift Training", "LOTO", "Machine Safe Guarding", "MEWP Fall Protection", "Mobile Elevated Work Platform"],
     "Additional": [
-      "40-Hour Hazwoper",
-      "Certified General Electrician",
-      "Certified Rigger and Signaler",
-      "CRIS Certificate",
-      "First Aid/CPR/AED",
-      "NCCO Crane Operations",
-      "OSHA 30 Certificate",
-      "OSHA 500 Certificate",
-      "OSHA 510 Certificate",
-      "Part 46 New Miner",
-      "Part 46 Refresher",
-      "Part 48 New Miner",
-      "Part 48 Refresher"
+      "40-Hour Hazwoper", "Certified General Electrician", "Certified Rigger and Signaler", "CRIS Certificate",
+      "First Aid/CPR/AED", "NCCO Crane Operations", "OSHA 30 Certificate", "OSHA 500 Certificate", "OSHA 510 Certificate",
+      "Part 46 New Miner", "Part 46 Refresher", "Part 48 New Miner", "Part 48 Refresher"
     ],
     "Site Specific": [
-      "Air Products- Martinez Safety Indoct",
-      "Andeaver Martinez Site Orientation",
-      "Northern California RSO",
-      "OSCA Card",
-      "PG&E SAFE 0101 Training",
-      "Respiratory Fit Testing",
-      "Respiratory Medical Questionnare",
-      "Scaffolding Awareness",
-      "Shell Martinez Site Specific",
-      "Silica Dust Exposure",
-      "Tesoro Martinez CA Site Specific"
+      "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation", "Northern California RSO",
+      "OSCA Card", "PG&E SAFE 0101 Training", "Respiratory Fit Testing", "Respiratory Medical Questionnare",
+      "Scaffolding Awareness", "Shell Martinez Site Specific", "Silica Dust Exposure", "Tesoro Martinez CA Site Specific"
     ]
   },
   "Office": {
-    "Required": [
-      "Employee Orientation / Code of Safe Practice Review",
-      "Workplace Violence Prevention"
-    ],
-    "Suggested": [
-      "Intro to First Aid"
-    ],
-    "Additional": [
-      "First Aid/CPR/AED"
-    ],
+    "Required": ["Employee Orientation / Code of Safe Practice Review", "Workplace Violence Prevention"],
+    "Suggested": ["Intro to First Aid"],
+    "Additional": ["First Aid/CPR/AED"],
     "Site Specific": []
   }
 };
 
-// Helper: Get categories for a position (fallback to empty if not found)
+// Helper: Get categories for a position
 function getCategoriesForPosition(position) {
-  return TRAINING_MATRIX[position] || {
-    Required: [],
-    Suggested: [],
-    Additional: [],
-    SiteSpecific: []
-  };
+  const cats = TRAINING_MATRIX[position] || { Required: [], Suggested: [], Additional: [], "Site Specific": [] };
+  // Normalize key for "Site Specific" (in case of space issues)
+  cats.SiteSpecific = cats["Site Specific"] || [];
+  return cats;
 }
 
-// STATE
-let records = [], topicMap = {}, employeeMap = {}, allTopics = new Set();
-let allOverdue = [];
-
-// DATA LOADING (unchanged except cache clear if needed)
-async function loadData() {
-  // ... (same as before)
-}
-
-// DATE PARSER, UTILITIES, PDF EXPORT (unchanged)
+// STATE & loadData, parseTextDate, normalizeName, badge, exportPDF (keep as-is from your code)
 
 // EMAIL GENERATOR – uses matrix Required + Site Specific
 function openOutlookEmail(normName) {
@@ -250,7 +81,7 @@ function openOutlookEmail(normName) {
   const firstName = fullName.split(' ')[0];
   const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'N/A';
   const cats = getCategoriesForPosition(position);
-  const requiredList = [...cats.Required, ...cats.SiteSpecific]; // actionable
+  const requiredList = [...cats.Required, ...cats.SiteSpecific];
 
   const actionItems = [];
   requiredList.forEach(topic => {
@@ -283,18 +114,17 @@ LWA Training Tracker`;
   location.href = `mailto:${RECIPIENT_EMAIL}?subject=Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
 }
 
-// CORE BUILD LOGIC (unchanged)
-
-// showEmployeeDetail – uses matrix categories
+// showEmployeeDetail – uses matrix categories ONLY
 function showEmployeeDetail(norm) {
   const emp = employeeMap[norm];
   if (!emp) return;
   const name = emp.original;
-  const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'N/A';
+  const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'Unknown';
   const cats = getCategoriesForPosition(position);
   const over = Object.entries(emp.records).filter(([,r]) => r['Status'] === 'Overdue').length;
   let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${name}</h4><div><button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button><button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button></div></div>`;
   html += `<p class="text-muted mb-1">Position: <strong>${position}</strong> | Trainings grouped by category | Overdues: ${over}</p><div class="table-responsive">`;
+
   const addSection = (title, topics) => {
     if (topics.length === 0) return;
     html += `<div class="section-header">${title}</div><table class="table table-sm table-hover"><thead><tr><th>Topic</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
@@ -308,21 +138,26 @@ function showEmployeeDetail(norm) {
     });
     html += `</tbody></table>`;
   };
+
   addSection("Required Trainings", cats.Required);
   addSection("Site Specific Trainings", cats.SiteSpecific);
   addSection("Suggested Trainings", cats.Suggested);
   addSection("Additional Trainings", cats.Additional);
-  // Any recorded but not in matrix go here as extra
+
+  // Extra: Recorded trainings not in matrix for this position
   const extra = Object.keys(emp.records).filter(t => 
     !cats.Required.includes(t) && !cats.SiteSpecific.includes(t) && 
     !cats.Suggested.includes(t) && !cats.Additional.includes(t)
   );
   addSection("Other Recorded Trainings", extra);
+
   html += `</div></div>`;
   document.getElementById('detailPane').innerHTML = html;
 }
 
-// ... (keep loadData, parseTextDate, normalizeName, badge, exportPDF, buildData, showAllOverdue, renderTopics, populateEmployeeDropdown, dark mode & init unchanged from previous version)
+// ... (keep all other functions: loadData, parseTextDate, normalizeName, badge, exportPDF, buildData, showAllOverdue, renderTopics, populateEmployeeDropdown, dark mode & init unchanged)
+
+// Make sure to call buildData() at the end
+buildData();
+setInterval(buildData, 600000);
 </script>
-</body>
-</html>
