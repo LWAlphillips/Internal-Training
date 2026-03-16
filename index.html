@@ -94,97 +94,38 @@ const LINKS = {
   "Workplace Violence Prevention": "https://www.surveymonkey.com/r/LWAWVPP"
 };
 
-// Full list of topics from your sheet
+// Full list of topics
 const ALL_TRAININGS = [
-  "40-Hour Hazwoper",
-  "Air Products- Martinez Safety Indoct",
-  "Andeaver Martinez Site Orientation",
-  "Certified General Electrician",
-  "Certified Rigger and Signaler",
-  "Chemical Hazard Safety",
-  "Confined Space",
-  "CRIS Certificate",
-  "Electrical Safety Awareness",
-  "Employee Orientation / Code of Safe Practice Review",
-  "Fall Protection Awareness",
-  "Fire Prevention and Extinguishers",
-  "First Aid/CPR/AED",
-  "Forklift Training",
-  "Hazard Communication (HazCom/GHS)",
-  "Heat Illness Prevention",
-  "Indoor Heat Illness Prevention",
-  "Intro to First Aid",
-  "LOTO",
-  "Machine Safe Guarding",
-  "MEWP Fall Protection",
-  "Mobile Elevated Work Platform",
-  "NCCO Crane Operations",
-  "Northern California RSO",
-  "OSCA Card",
-  "OSHA 10 Certificate",
-  "OSHA 30 Certificate",
-  "OSHA 500 Certificate",
-  "OSHA 510 Certificate",
-  "Part 46 New Miner",
-  "Part 46 Refresher",
-  "Part 48 New Miner",
-  "Part 48 Refresher",
-  "Personal Protective Equipment",
-  "PG&E SAFE 0101 Training",
-  "Respiratory Fit Testing",
-  "Respiratory Medical Questionnare",
-  "Scaffolding Awareness",
-  "Shell Martinez Site Specific",
-  "Silica Awareness Training",
-  "Silica Dust Exposure",
-  "Tesoro Martinez CA Site Specific",
-  "Valley Fever Awareness",
-  "Wildfire Smoke Prevention",
+  "40-Hour Hazwoper", "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation",
+  "Certified General Electrician", "Certified Rigger and Signaler", "Chemical Hazard Safety",
+  "Confined Space", "CRIS Certificate", "Electrical Safety Awareness",
+  "Employee Orientation / Code of Safe Practice Review", "Fall Protection Awareness",
+  "Fire Prevention and Extinguishers", "First Aid/CPR/AED", "Forklift Training",
+  "Hazard Communication (HazCom/GHS)", "Heat Illness Prevention", "Indoor Heat Illness Prevention",
+  "Intro to First Aid", "LOTO", "Machine Safe Guarding", "MEWP Fall Protection",
+  "Mobile Elevated Work Platform", "NCCO Crane Operations", "Northern California RSO",
+  "OSCA Card", "OSHA 10 Certificate", "OSHA 30 Certificate", "OSHA 500 Certificate",
+  "OSHA 510 Certificate", "Part 46 New Miner", "Part 46 Refresher", "Part 48 New Miner",
+  "Part 48 Refresher", "Personal Protective Equipment", "PG&E SAFE 0101 Training",
+  "Respiratory Fit Testing", "Respiratory Medical Questionnare", "Scaffolding Awareness",
+  "Shell Martinez Site Specific", "Silica Awareness Training", "Silica Dust Exposure",
+  "Tesoro Martinez CA Site Specific", "Valley Fever Awareness", "Wildfire Smoke Prevention",
   "Workplace Violence Prevention"
 ];
 
-// TRAINING MATRIX from your "Training Topics" paste
+// TRAINING MATRIX
 const TRAINING_MATRIX = {
   "Foreman": {
-    "Required": [
-      "Chemical Hazard Safety", "Electrical Safety Awareness", "Employee Orientation / Code of Safe Practice Review",
-      "Fall Protection Awareness", "Fire Prevention and Extinguishers", "First Aid/CPR/AED", "Forklift Training",
-      "Hazard Communication (HazCom/GHS)", "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention",
-      "Intro to First Aid", "Machine Safe Guarding", "MEWP Fall Protection", "Mobile Elevated Work Platform",
-      "OSHA 10 Certificate", "Personal Protective Equipment", "Silica Awareness Training", "Valley Fever Awareness",
-      "Wildfire Smoke Prevention", "Workplace Violence Prevention"
-    ],
+    "Required": ["Chemical Hazard Safety", "Electrical Safety Awareness", "Employee Orientation / Code of Safe Practice Review", "Fall Protection Awareness", "Fire Prevention and Extinguishers", "First Aid/CPR/AED", "Forklift Training", "Hazard Communication (HazCom/GHS)", "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention", "Intro to First Aid", "Machine Safe Guarding", "MEWP Fall Protection", "Mobile Elevated Work Platform", "OSHA 10 Certificate", "Personal Protective Equipment", "Silica Awareness Training", "Valley Fever Awareness", "Wildfire Smoke Prevention", "Workplace Violence Prevention"],
     "Suggested": ["Confined Space", "LOTO", "OSHA 30 Certificate"],
-    "Additional": [
-      "40-Hour Hazwoper", "Certified General Electrician", "Certified Rigger and Signaler", "CRIS Certificate",
-      "NCCO Crane Operations", "OSHA 500 Certificate", "OSHA 510 Certificate", "Part 46 New Miner", "Part 46 Refresher",
-      "Part 48 New Miner", "Part 48 Refresher"
-    ],
-    "Site Specific": [
-      "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation", "Northern California RSO",
-      "OSCA Card", "PG&E SAFE 0101 Training", "Respiratory Fit Testing", "Respiratory Medical Questionnare",
-      "Scaffolding Awareness", "Shell Martinez Site Specific", "Silica Dust Exposure", "Tesoro Martinez CA Site Specific"
-    ]
+    "Additional": ["40-Hour Hazwoper", "Certified General Electrician", "Certified Rigger and Signaler", "CRIS Certificate", "NCCO Crane Operations", "OSHA 500 Certificate", "OSHA 510 Certificate", "Part 46 New Miner", "Part 46 Refresher", "Part 48 New Miner", "Part 48 Refresher"],
+    "Site Specific": ["Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation", "Northern California RSO", "OSCA Card", "PG&E SAFE 0101 Training", "Respiratory Fit Testing", "Respiratory Medical Questionnare", "Scaffolding Awareness", "Shell Martinez Site Specific", "Silica Dust Exposure", "Tesoro Martinez CA Site Specific"]
   },
   "Crew": {
-    "Required": [
-      "Chemical Hazard Safety", "Electrical Safety Awareness", "Employee Orientation / Code of Safe Practice Review",
-      "Fall Protection Awareness", "Fire Prevention and Extinguishers", "Hazard Communication (HazCom/GHS)",
-      "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention", "Intro to First Aid", "OSHA 10 Certificate",
-      "Personal Protective Equipment", "Silica Awareness Training", "Valley Fever Awareness", "Wildfire Smoke Prevention",
-      "Workplace Violence Prevention"
-    ],
+    "Required": ["Chemical Hazard Safety", "Electrical Safety Awareness", "Employee Orientation / Code of Safe Practice Review", "Fall Protection Awareness", "Fire Prevention and Extinguishers", "Hazard Communication (HazCom/GHS)", "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention", "Intro to First Aid", "OSHA 10 Certificate", "Personal Protective Equipment", "Silica Awareness Training", "Valley Fever Awareness", "Wildfire Smoke Prevention", "Workplace Violence Prevention"],
     "Suggested": ["Confined Space", "Forklift Training", "LOTO", "Machine Safe Guarding", "MEWP Fall Protection", "Mobile Elevated Work Platform"],
-    "Additional": [
-      "40-Hour Hazwoper", "Certified General Electrician", "Certified Rigger and Signaler", "CRIS Certificate",
-      "First Aid/CPR/AED", "NCCO Crane Operations", "OSHA 30 Certificate", "OSHA 500 Certificate", "OSHA 510 Certificate",
-      "Part 46 New Miner", "Part 46 Refresher", "Part 48 New Miner", "Part 48 Refresher"
-    ],
-    "Site Specific": [
-      "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation", "Northern California RSO",
-      "OSCA Card", "PG&E SAFE 0101 Training", "Respiratory Fit Testing", "Respiratory Medical Questionnare",
-      "Scaffolding Awareness", "Shell Martinez Site Specific", "Silica Dust Exposure", "Tesoro Martinez CA Site Specific"
-    ]
+    "Additional": ["40-Hour Hazwoper", "Certified General Electrician", "Certified Rigger and Signaler", "CRIS Certificate", "First Aid/CPR/AED", "NCCO Crane Operations", "OSHA 30 Certificate", "OSHA 500 Certificate", "OSHA 510 Certificate", "Part 46 New Miner", "Part 46 Refresher", "Part 48 New Miner", "Part 48 Refresher"],
+    "Site Specific": ["Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation", "Northern California RSO", "OSCA Card", "PG&E SAFE 0101 Training", "Respiratory Fit Testing", "Respiratory Medical Questionnare", "Scaffolding Awareness", "Shell Martinez Site Specific", "Silica Dust Exposure", "Tesoro Martinez CA Site Specific"]
   },
   "Office": {
     "Required": ["Employee Orientation / Code of Safe Practice Review", "Workplace Violence Prevention"],
@@ -194,38 +135,35 @@ const TRAINING_MATRIX = {
   }
 };
 
-// Helper to get categories
 function getCategoriesForPosition(position) {
   const cats = TRAINING_MATRIX[position] || { Required: [], Suggested: [], Additional: [], "Site Specific": [] };
   cats.SiteSpecific = cats["Site Specific"] || [];
   return cats;
 }
 
-// STATE VARIABLES
 let records = [], topicMap = {}, employeeMap = {}, allTopics = new Set();
 let allOverdue = [];
 
+// ────────────────────────────────────────────────
 // DATA LOADING
+// ────────────────────────────────────────────────
 async function loadData() {
   document.getElementById('status').innerHTML = 'Fetching data...';
   try {
     const resp = await fetch(SHEET_URL + '&_=' + Date.now());
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const text = await resp.text();
-
     const results = Papa.parse(text, {
       header: true,
       skipEmptyLines: true,
       transformHeader: h => h.trim().replace(/^"|"$/g, '')
     });
-
     records = results.data
       .filter(r => r['Employee Name']?.trim() && r['Topic']?.trim())
       .map(r => {
         Object.keys(r).forEach(k => r[k] = (r[k] || '').trim().replace(/^"|"$/g, ''));
         return r;
       });
-
     document.getElementById('status').innerHTML = `Loaded <strong>${records.length}</strong> records`;
     return records;
   } catch (err) {
@@ -235,7 +173,9 @@ async function loadData() {
   }
 }
 
-// DATE PARSER
+// ────────────────────────────────────────────────
+// HELPERS
+// ────────────────────────────────────────────────
 function parseTextDate(dateStr) {
   if (!dateStr || dateStr.trim() === '') return 'N/A';
   const slashParts = dateStr.split('/');
@@ -262,7 +202,6 @@ function parseTextDate(dateStr) {
   return dateStr.trim();
 }
 
-// NORMALIZE NAME
 function normalizeName(name) {
   return name?.replace(/Perira/gi, 'Pereira')
     .replace(/Silviera/gi, 'Silveira')
@@ -272,7 +211,6 @@ function normalizeName(name) {
     .replace(/\s+/g, ' ') || '';
 }
 
-// BADGE
 function badge(r) {
   const s = r['Status'] || '';
   const days = r['Days Remaining'] || '';
@@ -283,39 +221,51 @@ function badge(r) {
   return `<span class="badge bg-secondary">${s || '—'}</span>`;
 }
 
-// PDF EXPORT - WORKING VERSION
+// ────────────────────────────────────────────────
+// IMPROVED MULTI-PAGE PDF EXPORT
+// ────────────────────────────────────────────────
 async function exportPDF() {
   const { jsPDF } = window.jspdf;
   if (!jsPDF) {
-    alert("Error: jsPDF library not loaded. Check your internet connection or the script tag.");
+    alert("jsPDF not loaded. Check your internet connection.");
     return;
   }
 
   const detailPane = document.getElementById("detailPane");
   if (!detailPane || detailPane.innerHTML.includes("Click a topic or employee")) {
-    alert("Please select an employee first so the detail view shows content.");
+    alert("Please select an employee first.");
     return;
   }
 
   try {
-    // Force clean white background for PDF
+    // Prepare clean capture (white background, full height visible)
     const originalBg = detailPane.style.backgroundColor;
     const originalColor = detailPane.style.color;
+    const originalOverflow = detailPane.style.overflow;
     detailPane.style.backgroundColor = "#ffffff";
     detailPane.style.color = "#000000";
+    detailPane.style.overflow = "visible";
+
+    const parent = detailPane.parentElement;
+    const originalParentHeight = parent.style.height;
+    parent.style.height = "auto";
 
     const canvas = await html2canvas(detailPane, {
-      scale: 2,
+      scale: 1.8,                    // Good quality vs size balance (try 1.5 if too slow/big)
       useCORS: true,
       logging: false,
       backgroundColor: "#ffffff",
-      windowWidth: detailPane.scrollWidth,
-      windowHeight: detailPane.scrollHeight
+      windowWidth: detailPane.scrollWidth + 40,
+      windowHeight: detailPane.scrollHeight + 40,
+      height: detailPane.scrollHeight,
+      width: detailPane.scrollWidth
     });
 
-    // Restore original appearance
+    // Restore
     detailPane.style.backgroundColor = originalBg;
     detailPane.style.color = originalColor;
+    detailPane.style.overflow = originalOverflow;
+    parent.style.height = originalParentHeight;
 
     const imgData = canvas.toDataURL("image/png");
 
@@ -325,20 +275,49 @@ async function exportPDF() {
       format: "a4"
     });
 
-    const pageWidth  = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth  = pdf.internal.pageSize.getWidth();   // ~210 mm
+    const pageHeight = pdf.internal.pageSize.getHeight();  // ~297 mm
     const margin     = 10;
 
-    const imgWidth   = canvas.width;
-    const imgHeight  = canvas.height;
-    const ratio      = Math.min((pageWidth - 2 * margin) / imgWidth, (pageHeight - 2 * margin) / imgHeight);
+    const contentWidth  = pageWidth - 2 * margin;
+    const contentHeight = pageHeight - 2 * margin;
 
-    const finalWidth  = imgWidth  * ratio;
-    const finalHeight = imgHeight * ratio;
+    const canvasWidthPx  = canvas.width;
+    const canvasHeightPx = canvas.height;
 
-    pdf.addImage(imgData, "PNG", margin, margin, finalWidth, finalHeight);
+    const ratio         = contentWidth / canvasWidthPx;
+    const scaledHeightPx = canvasHeightPx * ratio;
+    const pageHeightPx  = contentHeight / ratio;  // px per page
 
-    // Use employee name from heading if available
+    let position = 0;
+    let pageNum = 0;
+
+    while (position < canvasHeightPx) {
+      if (pageNum > 0) pdf.addPage();
+
+      const sliceHeightPx = Math.min(pageHeightPx, canvasHeightPx - position);
+
+      const sliceCanvas = document.createElement("canvas");
+      sliceCanvas.width = canvasWidthPx;
+      sliceCanvas.height = sliceHeightPx;
+      const ctx = sliceCanvas.getContext("2d");
+      ctx.drawImage(canvas, 0, position, canvasWidthPx, sliceHeightPx, 0, 0, canvasWidthPx, sliceHeightPx);
+
+      const sliceData = sliceCanvas.toDataURL("image/png");
+
+      pdf.addImage(
+        sliceData,
+        "PNG",
+        margin,
+        margin,
+        contentWidth,
+        sliceHeightPx * ratio
+      );
+
+      position += pageHeightPx;
+      pageNum++;
+    }
+
     const empName = document.querySelector("#detailPane h4")?.textContent.trim() || "Training-Report";
     const safeName = empName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30);
     const filename = `LWA_Training_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`;
@@ -347,11 +326,13 @@ async function exportPDF() {
 
   } catch (err) {
     console.error("PDF generation failed:", err);
-    alert("Could not generate PDF:\n" + err.message + "\n(Open browser console for more details)");
+    alert("Failed to create PDF:\n" + err.message);
   }
 }
 
+// ────────────────────────────────────────────────
 // EMAIL
+// ────────────────────────────────────────────────
 function openOutlookEmail(normName) {
   const emp = employeeMap[normName];
   if (!emp) return;
@@ -392,7 +373,9 @@ LWA Training Tracker`;
   location.href = `mailto:${RECIPIENT_EMAIL}?subject=Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
 }
 
-// BUILD DATA
+// ────────────────────────────────────────────────
+// BUILD / RENDER
+// ────────────────────────────────────────────────
 async function buildData() {
   records = await loadData();
   if (!records.length) return;
@@ -436,7 +419,6 @@ async function buildData() {
   populateEmployeeDropdown();
 }
 
-// RENDER TOPICS
 function renderTopics(filter = '') {
   const el = document.getElementById('topicList');
   el.innerHTML = '';
@@ -453,7 +435,6 @@ function renderTopics(filter = '') {
 
 document.getElementById('topicSearch').addEventListener('input', e => renderTopics(e.target.value.trim()));
 
-// POPULATE EMPLOYEE DROPDOWN
 function populateEmployeeDropdown() {
   const sel = document.getElementById('employeeSelect');
   sel.innerHTML = '<option value="">— Jump to employee —</option>';
@@ -468,7 +449,6 @@ function populateEmployeeDropdown() {
   sel.onchange = e => e.target.value && showEmployeeDetail(e.target.value);
 }
 
-// SHOW TOPIC DETAIL
 function showTopicDetail(topic) {
   const recs = topicMap[topic] || [];
   let html = `<div class="card-body"><div class="d-flex justify-content-between"><h4>${topic}</h4></div><p class="text-muted">${recs.length} record(s)</p><div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>Employee</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
@@ -481,7 +461,6 @@ function showTopicDetail(topic) {
   document.getElementById('detailPane').innerHTML = html;
 }
 
-// SHOW EMPLOYEE DETAIL
 function showEmployeeDetail(norm) {
   const emp = employeeMap[norm];
   if (!emp) return;
@@ -517,7 +496,6 @@ function showEmployeeDetail(norm) {
   document.getElementById('detailPane').innerHTML = html;
 }
 
-// SHOW ALL OVERDUE (placeholder)
 function showAllOverdue() {
   document.getElementById('detailPane').innerHTML = `<div class="card-body text-center py-5"><p class="fs-4 text-success">All Overdue view - coming soon!</p></div>`;
 }
