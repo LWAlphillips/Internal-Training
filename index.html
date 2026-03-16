@@ -212,7 +212,6 @@ async function loadData() {
     const resp = await fetch(SHEET_URL + '&_=' + Date.now());
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const text = await resp.text();
-    console.log('CSV fetched, length:', text.length); // debug
 
     const results = Papa.parse(text, {
       header: true,
@@ -228,7 +227,6 @@ async function loadData() {
       });
 
     document.getElementById('status').innerHTML = `Loaded <strong>${records.length}</strong> records`;
-    console.log('Records loaded:', records.length); // debug
     return records;
   } catch (err) {
     document.getElementById('status').innerHTML = `<span class="text-danger">Error: ${err.message}</span>`;
@@ -285,9 +283,72 @@ function badge(r) {
   return `<span class="badge bg-secondary">${s || '—'}</span>`;
 }
 
-// PDF EXPORT (placeholder - replace with your full version)
+// PDF EXPORT - WORKING VERSION
 async function exportPDF() {
-  alert('PDF export coming soon - click an employee or topic first');
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) {
+    alert("Error: jsPDF library not loaded. Check your internet connection or the script tag.");
+    return;
+  }
+
+  const detailPane = document.getElementById("detailPane");
+  if (!detailPane || detailPane.innerHTML.includes("Click a topic or employee")) {
+    alert("Please select an employee first so the detail view shows content.");
+    return;
+  }
+
+  try {
+    // Force clean white background for PDF
+    const originalBg = detailPane.style.backgroundColor;
+    const originalColor = detailPane.style.color;
+    detailPane.style.backgroundColor = "#ffffff";
+    detailPane.style.color = "#000000";
+
+    const canvas = await html2canvas(detailPane, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      windowWidth: detailPane.scrollWidth,
+      windowHeight: detailPane.scrollHeight
+    });
+
+    // Restore original appearance
+    detailPane.style.backgroundColor = originalBg;
+    detailPane.style.color = originalColor;
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const pageWidth  = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin     = 10;
+
+    const imgWidth   = canvas.width;
+    const imgHeight  = canvas.height;
+    const ratio      = Math.min((pageWidth - 2 * margin) / imgWidth, (pageHeight - 2 * margin) / imgHeight);
+
+    const finalWidth  = imgWidth  * ratio;
+    const finalHeight = imgHeight * ratio;
+
+    pdf.addImage(imgData, "PNG", margin, margin, finalWidth, finalHeight);
+
+    // Use employee name from heading if available
+    const empName = document.querySelector("#detailPane h4")?.textContent.trim() || "Training-Report";
+    const safeName = empName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30);
+    const filename = `LWA_Training_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`;
+
+    pdf.save(filename);
+
+  } catch (err) {
+    console.error("PDF generation failed:", err);
+    alert("Could not generate PDF:\n" + err.message + "\n(Open browser console for more details)");
+  }
 }
 
 // EMAIL
