@@ -77,28 +77,173 @@
 </div>
 
 <script>
-// ────────────────────────────────────────────────
-// CONFIG & DATA (unchanged)
-// ────────────────────────────────────────────────
+// CONFIG
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRV7v_0mQWcqJI9ExD7lphRQDaHnyv65Tp_i2uDiBJOcxAJ5l6jXV1-WFFBKSU9YZErgLDkGB6nYmug/pub?output=csv';
-const RECIPIENT_EMAIL = 'your-team@company.com';
+const RECIPIENT_EMAIL = 'your-team@company.com'; // ← CHANGE THIS
 
-const LINKS = { /* unchanged */ };
+const LINKS = {
+  "Fall Protection Awareness": "https://www.surveymonkey.com/r/LWAFallProtectionQuiz",
+  "Hazard Communication (HazCom/GHS)": "https://www.surveymonkey.com/r/LWAHazCom",
+  "Indoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAIndoorHeatIllness",
+  "Outdoor Heat Illness Prevention": "https://www.surveymonkey.com/r/LWAHeatIllnessQuiz",
+  "Wildfire Smoke Prevention": "https://www.surveymonkey.com/r/LWAWildFireTraining",
+  "Workplace Violence Prevention": "https://www.surveymonkey.com/r/LWAWVPP"
+};
 
-const ALL_TRAININGS = [ /* unchanged list */ ];
+const ALL_TRAININGS = [
+  "40-Hour Hazwoper", "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation",
+  "Certified General Electrician", "Certified Rigger and Signaler", "Chemical Hazard Safety",
+  "Confined Space", "CRIS Certificate", "Electrical Safety Awareness",
+  "Employee Orientation / Code of Safe Practice Review", "Fall Protection Awareness",
+  "Fire Prevention and Extinguishers", "First Aid/CPR/AED", "Forklift Training",
+  "Hazard Communication (HazCom/GHS)", "Heat Illness Prevention", "Indoor Heat Illness Prevention",
+  "Intro to First Aid", "LOTO", "Machine Safe Guarding", "MEWP Fall Protection",
+  "Mobile Elevated Work Platform", "NCCO Crane Operations", "Northern California RSO",
+  "OSCA Card", "OSHA 10 Certificate", "OSHA 30 Certificate", "OSHA 500 Certificate",
+  "OSHA 510 Certificate", "Part 46 New Miner", "Part 46 Refresher", "Part 48 New Miner",
+  "Part 48 Refresher", "Personal Protective Equipment", "PG&E SAFE 0101 Training",
+  "Respiratory Fit Testing", "Respiratory Medical Questionnare", "Scaffolding Awareness",
+  "Shell Martinez Site Specific", "Silica Awareness Training", "Silica Dust Exposure",
+  "Tesoro Martinez CA Site Specific", "Valley Fever Awareness", "Wildfire Smoke Prevention",
+  "Workplace Violence Prevention"
+];
 
-const TRAINING_MATRIX = { /* unchanged matrix */ };
+const TRAINING_MATRIX = {
+  "Foreman": {
+    "Required": [
+      "Chemical Hazard Safety", "Electrical Safety Awareness", "Employee Orientation / Code of Safe Practice Review",
+      "Fall Protection Awareness", "Fire Prevention and Extinguishers", "First Aid/CPR/AED", "Forklift Training",
+      "Hazard Communication (HazCom/GHS)", "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention",
+      "Intro to First Aid", "Machine Safe Guarding", "MEWP Fall Protection", "Mobile Elevated Work Platform",
+      "OSHA 10 Certificate", "Personal Protective Equipment", "Silica Awareness Training", "Valley Fever Awareness",
+      "Wildfire Smoke Prevention", "Workplace Violence Prevention"
+    ],
+    "Suggested": ["Confined Space", "LOTO", "OSHA 30 Certificate"],
+    "Additional": [
+      "40-Hour Hazwoper", "Certified General Electrician", "Certified Rigger and Signaler", "CRIS Certificate",
+      "NCCO Crane Operations", "OSHA 500 Certificate", "OSHA 510 Certificate", "Part 46 New Miner", "Part 46 Refresher",
+      "Part 48 New Miner", "Part 48 Refresher"
+    ],
+    "Site Specific": [
+      "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation", "Northern California RSO",
+      "OSCA Card", "PG&E SAFE 0101 Training", "Respiratory Fit Testing", "Respiratory Medical Questionnare",
+      "Scaffolding Awareness", "Shell Martinez Site Specific", "Silica Dust Exposure", "Tesoro Martinez CA Site Specific"
+    ]
+  },
+  "Crew": {
+    "Required": [
+      "Chemical Hazard Safety", "Electrical Safety Awareness", "Employee Orientation / Code of Safe Practice Review",
+      "Fall Protection Awareness", "Fire Prevention and Extinguishers", "Hazard Communication (HazCom/GHS)",
+      "Indoor Heat Illness Prevention", "Outdoor Heat Illness Prevention", "Intro to First Aid", "OSHA 10 Certificate",
+      "Personal Protective Equipment", "Silica Awareness Training", "Valley Fever Awareness", "Wildfire Smoke Prevention",
+      "Workplace Violence Prevention"
+    ],
+    "Suggested": ["Confined Space", "Forklift Training", "LOTO", "Machine Safe Guarding", "MEWP Fall Protection", "Mobile Elevated Work Platform"],
+    "Additional": [
+      "40-Hour Hazwoper", "Certified General Electrician", "Certified Rigger and Signaler", "CRIS Certificate",
+      "First Aid/CPR/AED", "NCCO Crane Operations", "OSHA 30 Certificate", "OSHA 500 Certificate", "OSHA 510 Certificate",
+      "Part 46 New Miner", "Part 46 Refresher", "Part 48 New Miner", "Part 48 Refresher"
+    ],
+    "Site Specific": [
+      "Air Products- Martinez Safety Indoct", "Andeaver Martinez Site Orientation", "Northern California RSO",
+      "OSCA Card", "PG&E SAFE 0101 Training", "Respiratory Fit Testing", "Respiratory Medical Questionnare",
+      "Scaffolding Awareness", "Shell Martinez Site Specific", "Silica Dust Exposure", "Tesoro Martinez CA Site Specific"
+    ]
+  },
+  "Office": {
+    "Required": ["Employee Orientation / Code of Safe Practice Review", "Workplace Violence Prevention"],
+    "Suggested": ["Intro to First Aid"],
+    "Additional": ["First Aid/CPR/AED"],
+    "Site Specific": []
+  }
+};
 
-function getCategoriesForPosition(position) { /* unchanged */ }
+function getCategoriesForPosition(position) {
+  const cats = TRAINING_MATRIX[position] || { Required: [], Suggested: [], Additional: [], "Site Specific": [] };
+  cats.SiteSpecific = cats["Site Specific"] || [];
+  return cats;
+}
 
+// STATE
 let records = [], topicMap = {}, employeeMap = {}, allTopics = new Set();
 let allOverdue = [];
 
-// loadData, parseTextDate, normalizeName, badge functions unchanged...
+// DATA LOADING
+async function loadData() {
+  document.getElementById('status').innerHTML = 'Fetching data...';
+  try {
+    const resp = await fetch(SHEET_URL + '&_=' + Date.now());
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = await resp.text();
+    const results = Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: h => h.trim().replace(/^"|"$/g, '')
+    });
+    records = results.data
+      .filter(r => r['Employee Name']?.trim() && r['Topic']?.trim())
+      .map(r => {
+        Object.keys(r).forEach(k => r[k] = (r[k] || '').trim().replace(/^"|"$/g, ''));
+        return r;
+      });
+    document.getElementById('status').innerHTML = `Loaded <strong>${records.length}</strong> records`;
+    return records;
+  } catch (err) {
+    document.getElementById('status').innerHTML = `<span class="text-danger">Error: ${err.message}</span>`;
+    console.error('Data load error:', err);
+    return [];
+  }
+}
 
-// ────────────────────────────────────────────────
-// IMPROVED PDF EXPORT – supports BOTH employee and topic views
-// ────────────────────────────────────────────────
+// DATE PARSER
+function parseTextDate(dateStr) {
+  if (!dateStr || dateStr.trim() === '') return 'N/A';
+  const slashParts = dateStr.split('/');
+  if (slashParts.length === 3) {
+    const [m, d, y] = slashParts.map(p => parseInt(p.trim(), 10));
+    if (!isNaN(m) && !isNaN(d) && !isNaN(y)) {
+      let adjustedYear = y;
+      if (y > 2100) adjustedYear = y - 100;
+      const date = new Date(adjustedYear, m - 1, d);
+      if (!isNaN(date.getTime())) return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+  }
+  const match = dateStr.match(/([A-Za-z]+)\s+(\d{1,2})[,\s]+(\d{4})/i);
+  if (match) {
+    const [_, monthStr, day, year] = match;
+    const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+    const monthKey = monthStr.substring(0,3).toLowerCase();
+    const month = months[monthKey];
+    if (month !== undefined) {
+      const date = new Date(parseInt(year, 10), month, parseInt(day, 10));
+      if (!isNaN(date.getTime())) return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+  }
+  return dateStr.trim();
+}
+
+// NORMALIZE NAME
+function normalizeName(name) {
+  return name?.replace(/Perira/gi, 'Pereira')
+    .replace(/Silviera/gi, 'Silveira')
+    .replace(/[^\w\s]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ') || '';
+}
+
+// BADGE
+function badge(r) {
+  const s = r['Status'] || '';
+  const days = r['Days Remaining'] || '';
+  const comp = r['Completion Date'] ? parseTextDate(r['Completion Date']) : '';
+  if (s === 'Completed') return `<span class="badge badge-comp">Completed${comp !== 'N/A' ? ' (' + comp + ')' : ''}</span>`;
+  if (s === 'Not Due') return `<span class="badge badge-due">Not Due${days ? ' (' + days + 'd)' : ''}</span>`;
+  if (s === 'Overdue') return `<span class="badge badge-over">Overdue${days ? ' (' + days + 'd)' : ''}</span>`;
+  return `<span class="badge bg-secondary">${s || '—'}</span>`;
+}
+
+// MULTI-PAGE PDF EXPORT (supports both views)
 async function exportPDF() {
   const { jsPDF } = window.jspdf;
   if (!jsPDF) {
@@ -113,7 +258,6 @@ async function exportPDF() {
   }
 
   try {
-    // Clean capture setup
     const originalBg = detailPane.style.backgroundColor;
     const originalColor = detailPane.style.color;
     const originalOverflow = detailPane.style.overflow;
@@ -179,18 +323,15 @@ async function exportPDF() {
       pageNum++;
     }
 
-    // Better filename depending on view
     let filenameBase = "Training-Report";
     const h4 = document.querySelector("#detailPane h4");
     if (h4) {
-      // Employee view
-      const name = h4.textContent.trim().replace(/[^a-zA-Z0-9]/g, "_").substring(0, 30);
-      filenameBase = `Employee_${name}`;
-    } else if (detailPane.querySelector("table th")?.textContent.includes("Employee")) {
-      // Topic view – use the topic title
-      const topicTitle = document.querySelector("#detailPane h4")?.textContent.trim() || "Certification-List";
-      const safeTopic = topicTitle.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 40);
-      filenameBase = `Certification_${safeTopic}`;
+      const title = h4.textContent.trim();
+      if (title.includes(" ")) { // likely employee name
+        filenameBase = `Employee_${title.replace(/[^a-zA-Z0-9]/g, "_").substring(0,30)}`;
+      } else { // likely topic name
+        filenameBase = `Certification_${title.replace(/[^a-zA-Z0-9]/g, "_").substring(0,40)}`;
+      }
     }
 
     const filename = `LWA_${filenameBase}_${new Date().toISOString().slice(0,10)}.pdf`;
@@ -202,28 +343,138 @@ async function exportPDF() {
   }
 }
 
-// ────────────────────────────────────────────────
-// UPDATED: showTopicDetail – now includes PDF button
-// ────────────────────────────────────────────────
+// EMAIL FUNCTION
+function openOutlookEmail(normName) {
+  const emp = employeeMap[normName];
+  if (!emp) return;
+  const fullName = emp.original;
+  const firstName = fullName.split(' ')[0];
+  const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'N/A';
+  const cats = getCategoriesForPosition(position);
+  const requiredList = [...cats.Required, ...cats.SiteSpecific];
+
+  const actionItems = [];
+  requiredList.forEach(topic => {
+    const r = emp.records[topic];
+    const link = LINKS[topic] || 'Schedule Training';
+    if (r && r['Status'] === 'Overdue') {
+      const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
+      const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
+      actionItems.push(`• ${topic} (REQUIRED/Site Specific)\n (Training: ${trainDate} | Expires: ${exp})\n Status: Overdue\n Link: ${link}`);
+    } else if (!r) {
+      actionItems.push(`• ${topic} (REQUIRED/Site Specific)\n Status: No Record / Missing\n Link: ${link}`);
+    }
+  });
+  cats.Suggested.forEach(topic => {
+    const r = emp.records[topic];
+    if (r && r['Status'] === 'Overdue') {
+      const link = LINKS[topic] || 'Schedule Training';
+      const trainDate = r['Training Date'] ? parseTextDate(r['Training Date']) : 'N/A';
+      const exp = r['Expiration Date'] ? parseTextDate(r['Expiration Date']) : 'N/A';
+      actionItems.push(`• ${topic} (Suggested)\n (Training: ${trainDate} | Expires: ${exp})\n Status: Overdue\n Link: ${link}`);
+    }
+  });
+  const count = actionItems.length;
+  const body = `Hi ${firstName} (${position}),
+You have ${count} training${count !== 1 ? 's' : ''} needing attention:
+${actionItems.join('\n\n') || '• None'}
+Please complete as soon as possible.
+Generated: ${new Date().toLocaleString()}
+LWA Training Tracker`;
+  location.href = `mailto:${RECIPIENT_EMAIL}?subject=Training Action Needed: ${encodeURIComponent(fullName)}&body=${encodeURIComponent(body)}`;
+}
+
+// BUILD DATA
+async function buildData() {
+  records = await loadData();
+  if (!records.length) return;
+
+  topicMap = {};
+  employeeMap = {};
+  allTopics = new Set();
+  allOverdue = [];
+  let overdueCount = 0, overdueEmps = new Set();
+
+  records.forEach(r => {
+    if (r['Active/Inactive EE'] !== 'Active') return;
+
+    let topic = r['Topic'];
+    const orig = r['Employee Name'];
+    const status = r['Status'] || '';
+    const norm = normalizeName(orig);
+
+    if (!norm || !topic) return;
+
+    allTopics.add(topic);
+    if (!employeeMap[norm]) employeeMap[norm] = { original: orig, records: {} };
+    employeeMap[norm].records[topic] = r;
+
+    if (!topicMap[topic]) topicMap[topic] = [];
+    topicMap[topic].push({ ...r, 'Employee Name': orig });
+
+    if (status === 'Overdue') {
+      overdueCount++;
+      overdueEmps.add(norm);
+      allOverdue.push({ employee: orig, topic });
+    }
+  });
+
+  document.getElementById('overdueCount').textContent = overdueCount;
+  document.getElementById('overdueEmps').textContent = overdueEmps.size;
+  const banner = document.getElementById('overdueBanner');
+  overdueCount ? banner.classList.remove('d-none') : banner.classList.add('d-none');
+
+  renderTopics();
+  populateEmployeeDropdown();
+}
+
+// RENDER TOPICS
+function renderTopics(filter = '') {
+  const el = document.getElementById('topicList');
+  el.innerHTML = '';
+  ALL_TRAININGS.sort().forEach(t => {
+    if (filter && !t.toLowerCase().includes(filter.toLowerCase())) return;
+    const count = topicMap[t]?.length || 0;
+    const item = document.createElement('a');
+    item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+    item.innerHTML = `<span class="schedule-training">${t}</span> <span class="badge bg-primary rounded-pill">${count}</span>`;
+    item.onclick = () => showTopicDetail(t);
+    el.appendChild(item);
+  });
+}
+
+document.getElementById('topicSearch').addEventListener('input', e => renderTopics(e.target.value.trim()));
+
+// POPULATE EMPLOYEE DROPDOWN
+function populateEmployeeDropdown() {
+  const sel = document.getElementById('employeeSelect');
+  sel.innerHTML = '<option value="">— Jump to employee —</option>';
+  Object.keys(employeeMap).sort((a,b) => employeeMap[a].original.localeCompare(employeeMap[b].original)).forEach(norm => {
+    const emp = employeeMap[norm];
+    const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'Unknown';
+    const opt = document.createElement('option');
+    opt.value = norm;
+    opt.textContent = `${emp.original} (${position})`;
+    sel.appendChild(opt);
+  });
+  sel.onchange = e => e.target.value && showEmployeeDetail(e.target.value);
+}
+
+// SHOW TOPIC DETAIL (with PDF button)
 function showTopicDetail(topic) {
   const recs = topicMap[topic] || [];
   let html = `
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h4>${topic}</h4>
-        <button class="btn btn-success btn-sm" onclick="exportPDF()">PDF Export</button>
+        <button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button>
       </div>
       <p class="text-muted mb-3">${recs.length} record(s)</p>
       <div class="table-responsive">
         <table class="table table-sm table-hover">
           <thead>
             <tr>
-              <th>Employee</th>
-              <th>Training Date</th>
-              <th>Completion Date</th>
-              <th>Expiration Date</th>
-              <th>Days Remaining</th>
-              <th>Status</th>
+              <th>Employee</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -231,28 +482,68 @@ function showTopicDetail(topic) {
   recs.forEach(r => {
     const norm = normalizeName(r['Employee Name']);
     const name = employeeMap[norm]?.original || r['Employee Name'];
-    html += `
-      <tr>
-        <td><a href="javascript:void(0)" onclick="showEmployeeDetail('${norm}')">${name}</a></td>
-        <td>${parseTextDate(r['Training Date'])}</td>
-        <td>${parseTextDate(r['Completion Date'])}</td>
-        <td>${parseTextDate(r['Expiration Date'])}</td>
-        <td>${r['Days Remaining'] || '-'}</td>
-        <td>${badge(r)}</td>
-      </tr>
-    `;
+    html += `<tr><td><a href="javascript:void(0)" onclick="showEmployeeDetail('${norm}')">${name}</a></td><td>${parseTextDate(r['Training Date'])}</td><td>${parseTextDate(r['Completion Date'])}</td><td>${parseTextDate(r['Expiration Date'])}</td><td>${r['Days Remaining'] || '-'}</td><td>${badge(r)}</td></tr>`;
   });
   html += `</tbody></table></div></div>`;
   document.getElementById('detailPane').innerHTML = html;
 }
 
-// showEmployeeDetail remains unchanged (already has PDF button)
+// SHOW EMPLOYEE DETAIL (with PDF button)
+function showEmployeeDetail(norm) {
+  const emp = employeeMap[norm];
+  if (!emp) return;
+  const name = emp.original;
+  const position = emp.records[Object.keys(emp.records)[0]]?.['Position'] || 'Unknown';
+  const cats = getCategoriesForPosition(position);
+  const over = Object.entries(emp.records).filter(([,r]) => r['Status'] === 'Overdue').length;
+  let html = `<div class="card-body"><div class="d-flex justify-content-between align-items-center mb-3"><h4>${name}</h4><div><button class="btn btn-success btn-sm" onclick="exportPDF()">PDF</button><button class="btn btn-primary btn-sm" onclick="openOutlookEmail('${norm}')">Send Email</button></div></div>`;
+  html += `<p class="text-muted mb-1">Position: <strong>${position}</strong> | Trainings grouped by category | Overdues: ${over}</p><div class="table-responsive">`;
+  const addSection = (title, topics) => {
+    if (topics.length === 0) return;
+    html += `<div class="section-header">${title}</div><table class="table table-sm table-hover"><thead><tr><th>Topic</th><th>Training Date</th><th>Completion Date</th><th>Expiration Date</th><th>Days Remaining</th><th>Status</th></tr></thead><tbody>`;
+    topics.sort().forEach(topic => {
+      const r = emp.records[topic];
+      if (r) {
+        html += `<tr><td>${topic}</td><td>${parseTextDate(r['Training Date'])}</td><td>${parseTextDate(r['Completion Date'])}</td><td>${parseTextDate(r['Expiration Date'])}</td><td>${r['Days Remaining'] || '-'}</td><td>${badge(r)}</td></tr>`;
+      } else {
+        html += `<tr class="table-secondary"><td>${topic}</td><td colspan="5"><span class="badge badge-norecord">No Record</span></td></tr>`;
+      }
+    });
+    html += `</tbody></table>`;
+  };
+  addSection("Required Trainings", cats.Required);
+  addSection("Site Specific Trainings", cats.SiteSpecific);
+  addSection("Suggested Trainings", cats.Suggested);
+  addSection("Additional Trainings", cats.Additional);
+  const extra = Object.keys(emp.records).filter(t => 
+    !cats.Required.includes(t) && !cats.SiteSpecific.includes(t) && 
+    !cats.Suggested.includes(t) && !cats.Additional.includes(t)
+  );
+  addSection("Other Recorded Trainings", extra);
+  html += `</div></div>`;
+  document.getElementById('detailPane').innerHTML = html;
+}
 
-// Other functions (loadData, buildData, renderTopics, populateEmployeeDropdown, openOutlookEmail, etc.) remain unchanged from previous version
+// SHOW ALL OVERDUE (placeholder)
+function showAllOverdue() {
+  document.getElementById('detailPane').innerHTML = `<div class="card-body text-center py-5"><p class="fs-4 text-success">All Overdue view - coming soon!</p></div>`;
+}
 
-// START
+// DARK MODE
+document.getElementById('darkModeToggle').addEventListener('change', e => {
+  document.body.classList.toggle('dark', e.target.checked);
+  localStorage.setItem('darkMode', e.target.checked);
+});
+
+if (localStorage.getItem('darkMode') === 'true') {
+  document.getElementById('darkModeToggle').checked = true;
+  document.body.classList.add('dark');
+}
+
+// ── START APPLICATION ────────────────────────────────────────────────
 buildData();
 setInterval(buildData, 600000);
+
 </script>
 </body>
 </html>
